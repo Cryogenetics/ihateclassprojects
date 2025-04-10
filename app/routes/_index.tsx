@@ -1,4 +1,27 @@
 import type { MetaFunction } from "@remix-run/node";
+import {useLoaderData} from "react-router";
+import {db} from "~/database";
+
+export const loader = async () => {
+  console.log("Loading main page")
+  console.log(process.env.DB_PORT)
+  db.getConnection((err, connection) => {
+    if (err) {
+      console.error("Error connecting to the database:", err);
+      return;
+    }
+    // console.log("Connected to the database");
+    connection.release();
+  //   connection.query("SELECT * FROM users", (error, results) => {
+  //       if (error) {
+  //           console.error("Error executing query:", error);
+  //           return;
+  //       }
+  //       console.log("Query results:", results);
+  //   })
+  });
+    return "Loaded Data";
+}
 
 export const meta: MetaFunction = () => {
   return [
@@ -8,6 +31,8 @@ export const meta: MetaFunction = () => {
 };
 
 export default function Index() {
+  const data = useLoaderData();
+    console.log(data, " this is in the client")
   return (
     <div className="flex h-screen items-center justify-center">
       <div className="flex flex-col items-center gap-16">
