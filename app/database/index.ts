@@ -11,7 +11,9 @@ export const db = mySQL.createPool({
     queueLimit: 0,
 });
 
-export async function makeDBQuery(query: string): Promise<string[] | Record<string, boolean | Date | null>[]> {
+type resultTypes = boolean | Date | null
+
+export async function makeDBQuery(query: string): Promise<string[] | Record<string, resultTypes>[]> {
     return new Promise((resolve, reject) => {
         db.getConnection((err, connection) => {
             if (err) {
@@ -33,23 +35,6 @@ export async function makeDBQuery(query: string): Promise<string[] | Record<stri
 }
 
 
-/**
- * Extracts table names from SHOW TABLES query into a simple array
- * @param results Array of MySQL RowDataPacket objects from SHOW TABLES
- * @returns Simple array of table names
- */
-function getTableNames(results: { [key:string]: string }[]): string[] {
-    if (!results || !Array.isArray(results) || results.length === 0) {
-        return [];
-    }
-
-    // Find the column name that contains table names (usually Tables_in_[database])
-    const firstRow = results[0];
-    const tableNameKey = Object.keys(firstRow)[0];
-
-    // Extract just the table names into an array
-    return results.map(row => row[tableNameKey]);
-}
 
 
 /**
@@ -62,13 +47,7 @@ export function parseQueryResults(results: Record<string,never>[], fields?: Fiel
     if (!results || !Array.isArray(results) || results.length === 0) {
         return [];
     }
-
-    // Handle SHOW TABLES query
-    if (fields?.length === 1 && fields[0].name.startsWith('Tables_in_')) {
-        return getTableNames(results);
-    }
-
-    // For other queries, return properly typed objects
+    // For queries, return properly typed objects
     return results.map(row => {
         const cleanRow: Record<string, boolean|Date|null> = {};
 

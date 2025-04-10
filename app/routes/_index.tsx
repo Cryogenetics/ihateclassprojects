@@ -1,26 +1,11 @@
-import type { MetaFunction } from "@remix-run/node";
+import type {MetaFunction} from "@remix-run/node";
 import {useLoaderData} from "react-router";
-import {db} from "~/database";
+import {makeDBQuery} from "~/database";
 
 export const loader = async () => {
   console.log("Loading main page")
   console.log(process.env.DB_PORT)
-  db.getConnection((err, connection) => {
-    if (err) {
-      console.error("Error connecting to the database:", err);
-      return;
-    }
-    // console.log("Connected to the database");
-    connection.release();
-  //   connection.query("SELECT * FROM users", (error, results) => {
-  //       if (error) {
-  //           console.error("Error executing query:", error);
-  //           return;
-  //       }
-  //       console.log("Query results:", results);
-  //   })
-  });
-    return "Loaded Data";
+  return await makeDBQuery("SELECT * FROM users");
 }
 
 export const meta: MetaFunction = () => {
