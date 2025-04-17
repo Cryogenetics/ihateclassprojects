@@ -1,40 +1,44 @@
-# Welcome to Remix!
-
-- 📖 [Remix docs](https://remix.run/docs)
-
-## Development
-
-Run the dev server:
-
-```shellscript
-npm run dev
-```
-
-## Deployment
-
-First, build your app for production:
-
-```sh
-npm run build
-```
-
-Then run the app in production mode:
-
-```sh
-npm start
-```
-
-Now you'll need to pick a host to deploy it to.
-
-### DIY
-
-If you're familiar with deploying Node applications, the built-in Remix app server is production-ready.
-
-Make sure to deploy the output of `npm run build`
-
-- `build/server`
-- `build/client`
-
-## Styling
-
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever css framework you prefer. See the [Vite docs on css](https://vitejs.dev/guide/features.html#css) for more information.
+Project: 
+ - [ ] Expected:
+	 - [ ] Implemented all parts of project
+	 - [ ] connects all tables of DB
+	 - [ ] professional looking
+ - [ ] Very minimum project requirements:
+	 - [ ] Data model and implementation should be updated and in 3NF
+	 - [x] embedded SQL must be used directly
+	 - [ ] there should be a homepage
+	 - [ ] one or more pages that perform:
+		- [ ] INSERT
+		- [ ] UPDATE
+		- [ ] DELETE
+	 - [ ]  at least two security features
+	 - [ ] three report pages that cover some of the queries
+ 
+Report:
+ - [ ] Cover page:
+	 - [ ] Title
+	 - [ ] Members
+ - [ ]  Project Requirements:
+	 - [ ] explain project requirements
+	 - [ ] essentially refined proposal
+ - [ ]  Data Modelling:
+	 - [ ] High level and low level data modelling
+	 - [ ] must include: 
+		 - [ ] final ER
+		 - [ ] Class diagram
+		 - [ ] low level tables
+		 - [ ] **subsection on normalization, explaining why 3NF**
+ - [ ] Implementation:
+	 - [ ] implementation details:
+		 - [ ] high-level workflow of actions
+		 - [ ] snapshots of some pages with brief explanation
+		 - [ ] code snippets of important parts
+ - [ ] Security features:
+	 - [ ] explanation and implementation of security features
+ - [ ]  Other features (optional)
+ - [ ] 12pt Times New Roman; 1.5 line space
+ - [ ] 5+ pages
+ - [ ] understandable
+ - [ ] proofread
+ - [ ] pdf
+[[original.pdf]]
