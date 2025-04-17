@@ -1,6 +1,7 @@
 import type {MetaFunction} from "@remix-run/node";
 import {useLoaderData} from "react-router";
 import {makeDBQuery} from "~/database";
+import {Input} from "@heroui/input";
 
 export const loader = async () => {
   console.log("Loading main page")
@@ -42,6 +43,7 @@ export default function Index() {
           <p className="leading-6 text-gray-700 dark:text-gray-200">
             What&apos;s next?
           </p>
+          <Input label={"TestInput"} />
           <ul>
             {resources.map(({ href, text, icon }) => (
               <li key={href}>
