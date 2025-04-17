@@ -11,9 +11,7 @@ export const db = mySQL.createPool({
     queueLimit: 0,
 });
 
-type resultTypes = boolean | Date | null
-
-export async function makeDBQuery(query: string): Promise<string[] | Record<string, resultTypes>[]> {
+export async function makeDBQuery<T>(query: string): Promise<T[]> {
     return new Promise((resolve, reject) => {
         db.getConnection((err, connection) => {
             if (err) {
@@ -43,7 +41,7 @@ export async function makeDBQuery(query: string): Promise<string[] | Record<stri
  * @param fields Array of MySQL field metadata objects
  * @returns Properly structured data based on the query type
  */
-export function parseQueryResults(results: Record<string,never>[], fields?: FieldInfo[]): Record<string, boolean | Date|null>[] | string[] {
+export function parseQueryResults<T>(results: Record<string,never>[], fields?: FieldInfo[]): T[] {
     if (!results || !Array.isArray(results) || results.length === 0) {
         return [];
     }
@@ -82,7 +80,7 @@ export function parseQueryResults(results: Record<string,never>[], fields?: Fiel
             }
         }
 
-        return cleanRow;
+        return cleanRow as T;
     });
 }
 
