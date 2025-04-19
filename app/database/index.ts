@@ -9,6 +9,7 @@ export const db = mySQL.createPool({
     connectionLimit: 10,
     waitForConnections: true,
     queueLimit: 0,
+    multipleStatements: true,
 });
 
 export async function makeDBQuery<T>(query: string): Promise<T[]> {
