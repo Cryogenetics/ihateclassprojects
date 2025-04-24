@@ -5,7 +5,7 @@ export const db = mySQL.createPool({
     port: Number(process.env.DB_PORT) || 3306,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
-    database: process.env.DB_DATABASE,
+    database: "mechanic_db",
     connectionLimit: 10,
     waitForConnections: true,
     queueLimit: 0,
@@ -83,31 +83,3 @@ export function parseQueryResults<T>(results: Record<string,never>[], fields?: F
         return cleanRow as T;
     });
 }
-
-//setup script for creating the database tables
-export async function setupDatabase() {
-    const createUsersTable = `
-        CREATE TABLE IF NOT EXISTS users (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            name VARCHAR(255) NOT NULL,
-            email VARCHAR(255) NOT NULL UNIQUE,
-            password VARCHAR(255) NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    `;
-
-    const createPostsTable = `
-        CREATE TABLE IF NOT EXISTS posts (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            user_id INT NOT NULL,
-            title VARCHAR(255) NOT NULL,
-            content TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id)
-        )
-    `;
-
-    await makeDBQuery(createUsersTable);
-    await makeDBQuery(createPostsTable);
-}
-setupDatabase()
