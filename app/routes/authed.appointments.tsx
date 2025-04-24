@@ -209,45 +209,9 @@ export default function IndexT() {
                         </Button>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto pr-2 max-h-[79vh]">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto pr-2 max-h-[70vh]">
                         {appointments.map((appointment) => (
-                            <Card key={appointment.appt_id} className="border border-gray-200 dark:border-gray-700">
-                                <CardHeader className="flex justify-between items-center">
-                                    <h2 className="text-xl font-bold">Appointment #{appointment.appt_id}</h2>
-                                    <span className="text-sm px-2 py-1 rounded-full bg-blue-100 text-blue-800">
-                                    {appointment.status}
-                                </span>
-                                </CardHeader>
-                                <Divider/>
-                                <CardBody>
-                                    <div className="space-y-2">
-                                        <p><span className="font-medium">VIN:</span> {appointment.VIN}</p>
-                                        <p><span className="font-medium">Mechanic ID:</span> {appointment.mechanic_id}</p>
-                                        <p><span className="font-medium">Shop ID:</span> {appointment.shop_id}</p>
-                                        <p><span className="font-medium">Scheduled:</span> {appointment.scheduled_datetime.toTimeString()}</p>
-                                    </div>
-                                </CardBody>
-                                <CardFooter className="flex justify-end gap-2">
-                                    <Button
-                                        as={Link}
-                                        href={`appointments/${appointment.appt_id}/update`}
-                                        color="primary"
-                                        variant="flat"
-                                        size="sm"
-                                    >
-                                        Edit
-                                    </Button>
-                                    <Button
-                                        as={Link}
-                                        href={`appointments/${appointment.appt_id}/delete`}
-                                        color="danger"
-                                        variant="flat"
-                                        size="sm"
-                                    >
-                                        Delete
-                                    </Button>
-                                </CardFooter>
-                            </Card>
+                            <AppointmentCard key={appointment.appt_id.toString()} appointment={appointment} />
                         ))}
                     </div>
                 )}
@@ -258,3 +222,42 @@ export default function IndexT() {
 }
 
 
+
+const AppointmentCard = ({key, appointment}: {key:string, appointment: Appointment})=>{
+    return <Card key={key} className="border border-gray-200 dark:border-gray-700">
+    <CardHeader className="flex justify-between items-center">
+        <h2 className="text-xl font-bold">Appointment #{appointment.appt_id}</h2>
+        <span className="text-sm px-2 py-1 rounded-full bg-blue-100 text-blue-800">
+                                    {appointment.status}
+                                </span>
+    </CardHeader>
+    <Divider/>
+    <CardBody>
+        <div className="space-y-2">
+            <p><span className="font-medium">VIN:</span> {appointment.VIN}</p>
+            <p><span className="font-medium">Mechanic ID:</span> {appointment.mechanic_id}</p>
+            <p><span className="font-medium">Shop ID:</span> {appointment.shop_id}</p>
+            <p><span className="font-medium">Scheduled:</span> {appointment.scheduled_datetime.toTimeString()}</p>
+        </div>
+    </CardBody>
+    <CardFooter className="flex justify-end gap-2">
+        <Button
+            as={Link}
+            href={`appointments/${appointment.appt_id}/update`}
+            color="primary"
+            variant="flat"
+            size="sm"
+        >
+            Edit
+        </Button>
+        <Button
+            as={Link}
+            href={`appointments/${appointment.appt_id}/delete`}
+            color="danger"
+            variant="flat"
+            size="sm"
+        >
+            Delete
+        </Button>
+    </CardFooter>
+</Card>}
