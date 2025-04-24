@@ -1,0 +1,220 @@
+import {
+    Button,
+    DatePicker,
+    Input,
+    Modal,
+    ModalBody,
+    ModalContent,
+    ModalHeader,
+    Select,
+    SelectItem,
+    TimeInput,
+} from "@heroui/react";
+import {Form, useActionData, useNavigate} from "@remix-run/react";
+import { Textarea } from "@heroui/input";
+import { useState } from "react";
+
+export const action = async ({ request }: { request: Request }) => {
+    const formData = await request.formData();
+    const vin = formData.get("vin")?.toString();
+    const mechanicId = formData.get("mechanicId")?.toString();
+    const shopId = formData.get("shopId")?.toString();
+    const date = formData.get("date")?.toString();
+    const time = formData.get("time")?.toString();
+    // const description = formData.get("description")?.toString();
+
+    const fieldErrors: Record<string, string> = {};
+    if (!vin) fieldErrors.vin = "VIN is required";
+    if (!mechanicId) fieldErrors.mechanicId = "Mechanic is required";
+    if (!shopId) fieldErrors.shopId = "Shop is required";
+    if (!date) fieldErrors.date = "Date is required";
+    if (!time) fieldErrors.time = "Time is required";
+
+    if (Object.keys(fieldErrors).length > 0) {
+        return { fieldErrors };
+    }
+
+    try {
+        const scheduledDatetime = new Date(`${date}T${time}`);
+        console.log(scheduledDatetime);
+        // await makeDBQuery(
+        //     "INSERT INTO appointment (VIN, mechanic_id, shop_id, scheduled_datetime, description, status) VALUES (?, ?, ?, ?, ?, ?)",
+        //     [vin, mechanicId, shopId, scheduledDatetime, description || "", "scheduled"]
+        // );
+
+        return { success: true };
+    } catch (error) {
+        console.error("Error creating appointment:", error);
+        return { error: "Failed to create appointment" };
+    }
+};
+
+export default function CreateModal() {
+    const actionData = useActionData<typeof action>();
+    const navigate = useNavigate();
+    const [opened, setOpened] = useState(true);
+
+    const onClose = ()=> {
+        setOpened(false);
+        navigate("/authed/appointments");
+    }
+
+    return (
+        <CreateAppointmentModal
+            isOpen={opened}
+            onClose={onClose}
+            actionData={actionData}
+        />
+    );
+}
+
+const CreateAppointmentModal = ({
+    isOpen,
+    onClose,
+    actionData,
+}: {
+    isOpen: boolean;
+    onClose: () => void;
+    actionData: {
+        fieldErrors: Record<string, string>
+        success?: undefined
+        error?: undefined
+    } | {
+        success: boolean
+        fieldErrors?: undefined
+        error?: undefined
+    } | {
+        error: string
+        fieldErrors?: undefined
+        success?: undefined
+    } | undefined;
+}) => {
+    return (
+        <Modal isOpen={isOpen} onClose={onClose} size="3xl">
+            <ModalContent>
+                <ModalHeader className="text-2xl font-bold">
+                    Create New Appointment
+                </ModalHeader>
+
+                <ModalBody>
+                    {actionData?.error && (
+                        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                            {actionData.error}
+                        </div>
+                    )}
+
+                    <Form method="post" className="space-y-6">
+                        <div>
+                            <Input
+                                label="Vehicle VIN"
+                                id="vin"
+                                name="vin"
+                                placeholder="Enter vehicle VIN"
+                                isRequired={true}
+                                labelPlacement="outside"
+                                errorMessage={actionData?.fieldErrors?.vin}
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <Select
+                                    label="Mechanic"
+                                    id="mechanicId"
+                                    name="mechanicId"
+                                    labelPlacement="outside"
+                                    isRequired={true}
+                                    errorMessage={
+                                        actionData?.fieldErrors?.mechanicId
+                                    }
+                                >
+                                    <SelectItem key="1">John Smith</SelectItem>
+                                    <SelectItem key="2">
+                                        Maria Garcia
+                                    </SelectItem>
+                                    <SelectItem key="3">David Lee</SelectItem>
+                                </Select>
+                            </div>
+
+                            <div>
+                                <Select
+                                    label="Shop Location"
+                                    id="shopId"
+                                    name="shopId"
+                                    labelPlacement="outside"
+                                    isRequired={true}
+                                    errorMessage={
+                                        actionData?.fieldErrors?.shopId
+                                    }
+                                >
+                                    <SelectItem key="1">
+                                        Downtown Shop
+                                    </SelectItem>
+                                    <SelectItem key="2">
+                                        Westside Location
+                                    </SelectItem>
+                                    <SelectItem key="3">
+                                        Northside Garage
+                                    </SelectItem>
+                                </Select>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <DatePicker
+                                    label="Appointment Date"
+                                    id="date"
+                                    name="date"
+                                    labelPlacement="outside"
+                                    isRequired={true}
+                                    errorMessage={actionData?.fieldErrors?.date}
+                                />
+                            </div>
+
+                            <div>
+                                <TimeInput
+                                    label="Appointment Time"
+                                    id="time"
+                                    name="time"
+                                    labelPlacement="outside"
+                                    isRequired={true}
+                                    errorMessage={actionData?.fieldErrors?.time}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-4">
+                            <Textarea
+                                label="Service Description"
+                                id="description"
+                                name="description"
+                                labelPlacement="outside"
+                                placeholder="Describe the service needed"
+                                multiple={true}
+                                rows={3}
+                            />
+                        </div>
+
+                        <div className="flex justify-end gap-2">
+                            <Button
+                                variant="flat"
+                                color="danger"
+                                onPress={onClose}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                type="submit"
+                                variant="solid"
+                                color="primary"
+                            >
+                                Create Appointment
+                            </Button>
+                        </div>
+                    </Form>
+                </ModalBody>
+            </ModalContent>
+        </Modal>
+    );
+};

@@ -127,7 +127,7 @@ export default function Index() {
           ))}
         </div>
 
-        <style jsx>{`
+        <style>{`
         @keyframes wave {
           0% { transform: rotate(-10deg) scaleY(0.9); }
           50% { transform: rotate(15deg) scaleY(1.1); }
