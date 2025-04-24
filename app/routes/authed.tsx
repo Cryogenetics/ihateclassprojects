@@ -1,8 +1,10 @@
 import {useLoaderData} from "react-router";
 import {Outlet} from "@remix-run/react";
-export const loader = async () => {
-  console.log("main page");
-  return "main";
+import {getUser} from "~/routes/middleware/auth.middleware";
+import {LoaderFunctionArgs} from "@remix-run/node";
+
+export const loader = async ({request} : LoaderFunctionArgs) => {
+  return await getUser(request);
 }
 
 
