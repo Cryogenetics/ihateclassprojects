@@ -34,7 +34,7 @@ export type Appointment = {
     VIN: string;
     mechanic_id: number;
     shop_id: number;
-    scheduled_datetime: string; // ISO format datetime
+    scheduled_datetime: Date;
     status: string;
 };
 
