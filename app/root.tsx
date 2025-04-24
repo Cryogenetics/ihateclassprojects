@@ -33,7 +33,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body className="dark text-foreground bg-background">
-      <HeroUIProvider>
+      <HeroUIProvider className={"bg-background"}>
         {children}
       </HeroUIProvider>
         <ScrollRestoration />
