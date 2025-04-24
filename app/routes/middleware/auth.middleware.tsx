@@ -1,4 +1,5 @@
 import jsonwebtoken from "jsonwebtoken";
+import {redirect} from "@remix-run/router";
 
 export async function validateJWT(headers: string | null) {
     console.log(headers)
@@ -22,8 +23,7 @@ export async function getUser(request: Request) : Promise<Response | string> {
     const cookies = request.headers.get("Cookie");
     const decoded = await validateJWT(cookies)
     if (!decoded) {
-        // redirect to signin page
-        throw new Response("Unauthorized", { status: 401 });
+        return redirect("/signin");
     }
     return decoded.username;
 }
