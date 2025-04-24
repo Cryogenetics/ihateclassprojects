@@ -11,7 +11,7 @@ export const db = mySQL.createPool({
     queueLimit: 0,
 });
 
-export async function makeDBQuery<T>(query: string): Promise<T[]> {
+export async function makeDBQuery<T>(query: string, values=[]): Promise<T[]> {
     return new Promise((resolve, reject) => {
         db.getConnection((err, connection) => {
             if (err) {
@@ -19,7 +19,7 @@ export async function makeDBQuery<T>(query: string): Promise<T[]> {
                 reject(err);
                 return;
             }
-            connection.query(query, (error, results, fields) => {
+            connection.query(query, values, (error, results, fields) => {
                 if (error) {
                     console.error("Error executing query:", error);
                     reject(error);
