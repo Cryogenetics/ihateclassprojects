@@ -29,6 +29,11 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
     console.log(`Getting vehicle with VIN ${vin}`);
 
     try {
+
+        if (!vin || typeof vin !== "string") {
+            throw new Error("VIN must be a non-empty string.");
+        }
+
         const vehicle = await makeDBQuery<VehicleWithOwner>(
             "SELECT v.*, c.firstname, c.lastname FROM vehicle v JOIN customer c ON v.customer_id = c.customer_id WHERE v.VIN = ?",
             [vin]
@@ -71,7 +76,11 @@ export const action = async ({ params }: LoaderFunctionArgs): Promise<ActionRetu
     console.log(`Deleting vehicle with VIN ${vin}`);
 
     try {
-        await makeDBQuery("DELETE FROM vehicle WHERE VIN = ?", [vin]);
+        // Fix: Specify the correct parameter types for makeDBQuery
+        await makeDBQuery<void>(
+            "DELETE FROM vehicle WHERE VIN = ?",
+            [vin]
+        );
         return { success: true };
     } catch (error) {
         console.error("Error deleting vehicle:", error);
