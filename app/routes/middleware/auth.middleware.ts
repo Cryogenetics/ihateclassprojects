@@ -7,6 +7,7 @@ export async function validateJWT(headers: string | null) {
         const jwt = headers.split(";").find(cookie => cookie.trim().startsWith("jwt="));
         if (jwt) {
             const token = jwt.split("=")[1];
+            console.log(token)
             try {
                 const decoded = await jsonwebtoken.verify(token, process.env.JWT_SECRET);
                 return decoded;
@@ -19,11 +20,13 @@ export async function validateJWT(headers: string | null) {
     return false
 }
 
-export async function getUser(request: Request) : Promise<Response | string> {
+export async function getUser(request: Request): Promise<Response | string> {
     const cookies = request.headers.get("Cookie");
     const decoded = await validateJWT(cookies)
+    console.log(decoded, "exists should")
     if (!decoded) {
         return redirect("/signin");
     }
+    console.log(decoded)
     return decoded.username;
 }
