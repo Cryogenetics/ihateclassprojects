@@ -46,6 +46,9 @@ export default function AppNavbar() {
             <NavbarItem>
                 <Link color="foreground" href={"/authed/appointments"} className="font-medium">Appointments</Link>
             </NavbarItem>
+            <NavbarItem>
+                <Link color="foreground" href={"/authed/employees"} className="font-medium">Employees</Link>
+            </NavbarItem>
 
         </NavbarContent>
 

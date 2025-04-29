@@ -6,7 +6,7 @@ import AppNavbar from "~/components/AppNavbar";
 import {redirect} from "@remix-run/router";
 
 export const loader = async ({request} : LoaderFunctionArgs) => {
-  if(request.url.endsWith("/authed")) {
+  if(request.url.endsWith("/authed") || request.url.endsWith("/authed/")) {
     return redirect("/authed/appointments");
   }
   return await getUser(request);
