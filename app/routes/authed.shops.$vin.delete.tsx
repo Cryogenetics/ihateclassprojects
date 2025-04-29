@@ -9,7 +9,7 @@ import {Form, useActionData, useNavigate, useLoaderData} from "@remix-run/react"
 import {useState} from "react";
 import {ActionFunctionArgs, LoaderFunctionArgs} from "@remix-run/node";
 import {makeDBQuery} from "~/database";
-import {Shop} from "~/database/schemas/types";
+import {Mechanic, Shop} from "~/database/schemas/types";
 
 export const loader = async ({params}: LoaderFunctionArgs) => {
     const {id} = params;
@@ -29,7 +29,7 @@ export const loader = async ({params}: LoaderFunctionArgs) => {
     return shop;
 }
 
-export const action = async ({params}: LoaderFunctionArgs) => {
+export const action = async ({params}: ActionFunctionArgs) => {
     const {id} = params;
     if (!id) {
         return {error: "Shop ID is required"};
@@ -37,7 +37,7 @@ export const action = async ({params}: LoaderFunctionArgs) => {
 
     try {
         // First check if this shop has any mechanics
-        const mechanics = await makeDBQuery(
+        const mechanics = await makeDBQuery<{ count: number }>(
             "SELECT COUNT(*) as count FROM mechanic WHERE shop_id = ?",
             [parseInt(id)]
         );
@@ -49,7 +49,7 @@ export const action = async ({params}: LoaderFunctionArgs) => {
         }
 
         // Check if shop has any appointments
-        const appointments = await makeDBQuery(
+        const appointments = await makeDBQuery<{count: number}>(
             "SELECT COUNT(*) as count FROM appointment WHERE shop_id = ?",
             [parseInt(id)]
         );
