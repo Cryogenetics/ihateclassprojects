@@ -48,6 +48,12 @@ export default function AppNavbar() {
             </NavbarItem>
             <NavbarItem>
                 <Link color="foreground" href={"/authed/employees"} className="font-medium">Employees</Link>
+                <Link color="foreground" href={"/authed/shops"} className="font-medium">Shops</Link>
+                <Link color="foreground" href={"/authed/vehicles"} className="font-medium">Vehicles</Link>
+            </NavbarItem>
+
+            <NavbarItem>
+                <Link color="foreground" href={"/authed/customers"} className="font-medium">Customers</Link>
             </NavbarItem>
 
         </NavbarContent>
