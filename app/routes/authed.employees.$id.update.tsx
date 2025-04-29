@@ -58,7 +58,7 @@ export const action = async ({ request, params }: { request: Request, params: { 
     try {
         await makeDBQuery(
             "UPDATE mechanic SET shop_id = ?, firstname = ?, lastname = ?, phone = ?, specialty = ? WHERE employee_id = ?",
-            [parseInt(shopId), firstname, lastname, phone, specialty, parseInt(id)]
+            [parseInt(shopId as string), firstname, lastname, phone, specialty, parseInt(id)]
         );
 
         return { success: true };

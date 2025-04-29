@@ -79,3 +79,9 @@ CREATE TABLE part_manufacturer (
                                    FOREIGN KEY (part_num) REFERENCES parts(part_num),
                                    FOREIGN KEY (manufacturer_id) REFERENCES manufacturer(man_id)
 );
+
+CREATE TABLE users (
+    username VARCHAR(255),
+    password VARCHAR(255)
+
+);

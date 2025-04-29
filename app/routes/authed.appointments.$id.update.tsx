@@ -10,10 +10,47 @@ import {
     SelectItem,
     TimeInput,
 } from "@heroui/react";
-import {Form, useActionData, useNavigate} from "@remix-run/react";
-import { Textarea } from "@heroui/input";
-import { redirect } from "@remix-run/router";
-import { useState } from "react";
+import {Form, useActionData, useLoaderData, useNavigate} from "@remix-run/react";
+import {Textarea} from "@heroui/input";
+import {useState} from "react";
+import {makeDBQuery} from "~/database";
+import {Appointment, Mechanic, Shop, Vehicle} from "~/database/schemas/types";
+import {LoaderFunctionArgs} from "@remix-run/node";
+import {toDate} from "@internationalized/date/src/conversion";
+import {now, parseDate, toTime} from "@internationalized/date";
+
+export const loader = async ({params}: LoaderFunctionArgs) => {
+    try {
+        // Fetch vehicles
+        const vehicles = await makeDBQuery<Vehicle>(
+            "SELECT v.VIN, v.make, v.model, v.year, v.customer_id FROM vehicle v ORDER BY v.make, v.model"
+        );
+
+        // Fetch mechanics
+        const mechanics = await makeDBQuery<Mechanic>(
+            "SELECT m.mechanic_id, m.firstname, m.lastname, m.specialization, m.shop_id FROM mechanic m ORDER BY m.lastname, m.firstname"
+        );
+
+        // Fetch shops
+        const shops = await makeDBQuery<Shop>(
+            "SELECT s.shop_id, s.name, s.address, s.phone FROM shop s ORDER BY s.name"
+        );
+
+        const [existingAppointment] = await makeDBQuery<Appointment>(
+            "SELECT * FROM appointment a WHERE a.appointment_id = ?",
+            [params.id]
+        );
+        return {
+            vehicles,
+            mechanics,
+            shops,
+            existingAppointment
+        };
+    } catch (error) {
+        console.log(error);
+        throw error;
+    }
+};
 
 export const action = async ({ request }: { request: Request }) => {
     const formData = await request.formData();
@@ -36,14 +73,17 @@ export const action = async ({ request }: { request: Request }) => {
     }
 
     try {
+        const appointmentId = formData.get("appointmentId")?.toString();
+        if (!appointmentId) {
+            return {error: "Appointment ID is required for updates"};
+        }
         const scheduledDatetime = new Date(`${date}T${time}`);
         console.log(scheduledDatetime);
-        // await makeDBQuery(
-        //     "INSERT INTO appointment (VIN, mechanic_id, shop_id, scheduled_datetime, description, status) VALUES (?, ?, ?, ?, ?, ?)",
-        //     [vin, mechanicId, shopId, scheduledDatetime, description || "", "scheduled"]
-        // );
-
-        return { success: true };
+        await makeDBQuery(
+            "UPDATE appointment SET VIN = ?, mechanic_id = ?, shop_id = ?, scheduled_datetime = ?, description = ?, status = ? WHERE appointment_id = ?",
+            [vin, mechanicId, shopId, scheduledDatetime, description || "", "updated", appointmentId]
+        );
+        return {success: true};
     } catch (error) {
         console.error("Error creating appointment:", error);
         return { error: "Failed to create appointment" };
