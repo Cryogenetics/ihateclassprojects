@@ -48,6 +48,7 @@ export default function AppNavbar() {
             </NavbarItem>
             <NavbarItem>
                 <Link color="foreground" href={"/authed/shops"} className="font-medium">Shops</Link>
+                <Link color="foreground" href={"/authed/vehicles"} className="font-medium">Vehicles</Link>
             </NavbarItem>
 
         </NavbarContent>
