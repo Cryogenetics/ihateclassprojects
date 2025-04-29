@@ -5,12 +5,13 @@ import {makeDBQuery} from "~/database";
 import {redirect} from "@remix-run/router";
 import jsonwebtoken from "jsonwebtoken";
 import {validateJWT} from "~/routes/middleware/auth.middleware";
+import crypto from "node:crypto";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
     const cookies = request.headers.get("Cookie");
     const loggedIn = await validateJWT(cookies)
     if (loggedIn) {
-        return redirect("/authed");
+        return redirect("/authed/appointments");
     }
     return null;
 }
@@ -20,11 +21,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const formData = await request.formData();
     const email = formData.get("email")?.toString();
     const username = formData.get("username")?.toString();
-    const password = formData.get("password")?.toString();
+    const rawPassword = formData.get("password")?.toString();
 
     if(!email) throw new Response("Email Required", { status: 400, statusText: "Email Required" });
     if (!username) throw new Response("Username Required", { status: 400, statusText: "Username Required" });
-    if (!password) throw new Response("Password Required", { status: 400, statusText: "Password Required" });
+    if (!rawPassword) throw new Response("Password Required", { status: 400, statusText: "Password Required" });
+
+
+    const password = crypto.createHash('sha512').update(rawPassword).digest('hex');
+
 
     // run db query to check if user exists
     const userExists = (await makeDBQuery<{username: string, password: string}>(`SELECT * FROM users WHERE username = "${username}"`)).length === 0;
@@ -34,12 +39,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
 
     // run db query to create user
-    const createUser = await makeDBQuery(`INSERT INTO users (username, password) VALUES ("${username}", "${password}")`);
+    const createUser = await makeDBQuery(`INSERT INTO users (username, password) VALUES (?, ?)`, [username, password]);
     if (createUser.length !== 0) {
         throw new Response("Error creating user", { status: 400, statusText: "Error creating user" });
     }
 
-    const jwt = jsonwebtoken.sign({ username }, process.env.JWT_SECRET, { expiresIn: "1h" });
+    const jwt = jsonwebtoken.sign({ username }, process.env.JWT_SECRET ?? "Default_JWT_Token", { expiresIn: "1h" });
     const cookie = `jwt=${jwt}; HttpOnly; Path=/; SameSite=Strict; Secure`;
     const headers = new Headers();
     headers.append("Set-Cookie", cookie);

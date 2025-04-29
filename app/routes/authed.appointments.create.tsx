@@ -13,6 +13,8 @@ import {
 import {Form, useActionData, useNavigate} from "@remix-run/react";
 import { Textarea } from "@heroui/input";
 import { useState } from "react";
+import {makeDBQuery} from "~/database";
+
 
 export const action = async ({ request }: { request: Request }) => {
     const formData = await request.formData();
@@ -21,7 +23,6 @@ export const action = async ({ request }: { request: Request }) => {
     const shopId = formData.get("shopId")?.toString();
     const date = formData.get("date")?.toString();
     const time = formData.get("time")?.toString();
-    // const description = formData.get("description")?.toString();
 
     const fieldErrors: Record<string, string> = {};
     if (!vin) fieldErrors.vin = "VIN is required";
@@ -37,10 +38,10 @@ export const action = async ({ request }: { request: Request }) => {
     try {
         const scheduledDatetime = new Date(`${date}T${time}`);
         console.log(scheduledDatetime);
-        // await makeDBQuery(
-        //     "INSERT INTO appointment (VIN, mechanic_id, shop_id, scheduled_datetime, description, status) VALUES (?, ?, ?, ?, ?, ?)",
-        //     [vin, mechanicId, shopId, scheduledDatetime, description || "", "scheduled"]
-        // );
+        await makeDBQuery(
+            "INSERT INTO appointment (VIN, mechanic_id, shop_id, scheduled_datetime, description, status) VALUES (?, ?, ?, ?, ?, ?)",
+            [vin, mechanicId, shopId, scheduledDatetime || "", "scheduled"]
+        );
 
         return { success: true };
     } catch (error) {
@@ -51,6 +52,9 @@ export const action = async ({ request }: { request: Request }) => {
 
 export default function CreateModal() {
     const actionData = useActionData<typeof action>();
+
+
+
     const navigate = useNavigate();
     const [opened, setOpened] = useState(true);
 

@@ -2,10 +2,13 @@ import {useLoaderData} from "react-router";
 import {Outlet} from "@remix-run/react";
 import {getUser} from "~/routes/middleware/auth.middleware";
 import {LoaderFunctionArgs} from "@remix-run/node";
-import {Navbar} from "@heroui/navbar";
 import AppNavbar from "~/components/AppNavbar";
+import {redirect} from "@remix-run/router";
 
 export const loader = async ({request} : LoaderFunctionArgs) => {
+  if(request.url.endsWith("/authed")) {
+    return redirect("/authed/appointments");
+  }
   return await getUser(request);
 }
 
@@ -19,6 +22,4 @@ export default function Index() {
       <Outlet/>
     </div>);
 }
-
-
 
