@@ -115,3 +115,53 @@ const CreateShopModal = ({
                                 placeholder="Enter shop name"
                                 isRequired={true}
                                 labelPlacement="outside"
+                                errorMessage={actionData?.fieldErrors?.shopName}
+                            />
+                        </div>
+
+                        <div>
+                            <Input
+                                label="Address"
+                                id="address"
+                                name="address"
+                                placeholder="Enter full address"
+                                isRequired={true}
+                                labelPlacement="outside"
+                                errorMessage={actionData?.fieldErrors?.address}
+                            />
+                        </div>
+
+                        <div>
+                            <Input
+                                label="Phone Number"
+                                id="phone"
+                                name="phone"
+                                placeholder="Format: 555-123-4567"
+                                isRequired={true}
+                                labelPlacement="outside"
+                                errorMessage={actionData?.fieldErrors?.phone}
+                            />
+                        </div>
+
+                        <div className="flex justify-end gap-2">
+                            <Button
+                                variant="flat"
+                                color="danger"
+                                onPress={onClose}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                type="submit"
+                                variant="solid"
+                                color="primary"
+                            >
+                                Add Shop
+                            </Button>
+                        </div>
+                    </Form>
+                </ModalBody>
+            </ModalContent>
+        </Modal>
+    );
+};
