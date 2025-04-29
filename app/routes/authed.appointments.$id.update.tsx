@@ -52,7 +52,7 @@ export const loader = async ({params}: LoaderFunctionArgs) => {
     }
 };
 
-export const action = async ({ request }: { request: Request }) => {
+export const action = async ({request}: { request: Request }) => {
     const formData = await request.formData();
     const vin = formData.get("vin")?.toString();
     const mechanicId = formData.get("mechanicId")?.toString();
@@ -69,7 +69,7 @@ export const action = async ({ request }: { request: Request }) => {
     if (!time) fieldErrors.time = "Time is required";
 
     if (Object.keys(fieldErrors).length > 0) {
-        return { fieldErrors };
+        return {fieldErrors};
     }
 
     try {
@@ -85,17 +85,18 @@ export const action = async ({ request }: { request: Request }) => {
         );
         return {success: true};
     } catch (error) {
-        console.error("Error creating appointment:", error);
-        return { error: "Failed to create appointment" };
+        console.error("Error updating appointment:", error);
+        return {error: "Failed to update appointment"};
     }
 };
 
 export default function CreateModal() {
+    const loaderData = useLoaderData<typeof loader>();
     const actionData = useActionData<typeof action>();
     const navigate = useNavigate();
     const [opened, setOpened] = useState(true);
 
-    const onClose = ()=> {
+    const onClose = () => {
         setOpened(false);
         navigate("/authed/appointments");
     }
@@ -105,6 +106,7 @@ export default function CreateModal() {
             isOpen={opened}
             onClose={onClose}
             actionData={actionData}
+            loaderData={loaderData}
         />
     );
 }
@@ -113,9 +115,17 @@ const CreateAppointmentModal = ({
                                     isOpen,
                                     onClose,
                                     actionData,
+                                    loaderData,
                                 }: {
     isOpen: boolean;
     onClose: () => void;
+    loaderData: {
+        vehicles: Vehicle[]
+        mechanics: Mechanic[]
+        shops: Shop[],
+        existingAppointment: Appointment
+
+    }
     actionData: {
         fieldErrors: Record<string, string>
         success?: undefined
@@ -130,6 +140,7 @@ const CreateAppointmentModal = ({
         success?: undefined
     } | undefined;
 }) => {
+    const dateExisting = loaderData.existingAppointment.scheduled_datetime;
     return (
         <Modal isOpen={isOpen} onClose={onClose} size="3xl">
             <ModalContent>
@@ -146,20 +157,30 @@ const CreateAppointmentModal = ({
 
                     <Form method="post" className="space-y-6">
                         <div>
-                            <Input
-                                label="Vehicle VIN"
-                                id="vin"
-                                name="vin"
-                                placeholder="Enter vehicle VIN"
-                                isRequired={true}
-                                labelPlacement="outside"
-                                errorMessage={actionData?.fieldErrors?.vin}
-                            />
+                            {loaderData.vehicles.length ?
+                                <Select label={"Vehicle VIN"}
+                                        id={"vin"}
+                                        name={"vin"}
+                                        placeholder={"Vehicle VIN"}
+                                        labelPlacement="outside"
+                                        isRequired={true}
+                                        errorMessage={actionData?.fieldErrors?.vin}
+                                        selectedKeys={[loaderData.existingAppointment.VIN]}
+                                >
+                                    {
+                                        loaderData.vehicles && loaderData.vehicles.map((vehicle) => (
+                                            <SelectItem key={vehicle.VIN}>
+                                                {vehicle.VIN} - {vehicle.make} {vehicle.model} ({vehicle.year})
+                                            </SelectItem>
+                                        ))
+                                    }
+                                </Select> : <Input disabled value={"No Vehicles Available, add one"}/>
+                            }
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <Select
+                                {loaderData.mechanics.length ? <Select
                                     label="Mechanic"
                                     id="mechanicId"
                                     name="mechanicId"
@@ -168,17 +189,18 @@ const CreateAppointmentModal = ({
                                     errorMessage={
                                         actionData?.fieldErrors?.mechanicId
                                     }
+                                    selectedKeys={[loaderData.existingAppointment.mechanic_id]}
                                 >
-                                    <SelectItem key="1">John Smith</SelectItem>
-                                    <SelectItem key="2">
-                                        Maria Garcia
-                                    </SelectItem>
-                                    <SelectItem key="3">David Lee</SelectItem>
-                                </Select>
+                                    {loaderData.mechanics && loaderData.mechanics.map((mechanic) => (
+                                        <SelectItem key={mechanic.employee_id}>
+                                            {mechanic.firstname} {mechanic.lastname}
+                                        </SelectItem>
+                                    ))}
+                                </Select> : <Input disabled value={"No Mechanics Available, add one"}/>}
                             </div>
 
                             <div>
-                                <Select
+                                {loaderData.shops.length ? <Select
                                     label="Shop Location"
                                     id="shopId"
                                     name="shopId"
@@ -187,40 +209,29 @@ const CreateAppointmentModal = ({
                                     errorMessage={
                                         actionData?.fieldErrors?.shopId
                                     }
+                                    selectedKeys={[loaderData.existingAppointment.shop_id]}
                                 >
-                                    <SelectItem key="1">
-                                        Downtown Shop
-                                    </SelectItem>
-                                    <SelectItem key="2">
-                                        Westside Location
-                                    </SelectItem>
-                                    <SelectItem key="3">
-                                        Northside Garage
-                                    </SelectItem>
-                                </Select>
+                                    {loaderData.shops && loaderData.shops.map((shop) => (
+                                        <SelectItem key={shop.shop_id}>
+                                            {shop.shop_name}
+                                        </SelectItem>
+                                    ))}
+                                </Select> : <Input disabled value={"No Shops Available, create one"}/>}
                             </div>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <DatePicker
+                                    hideTimeZone
+                                    showMonthAndYearPickers
                                     label="Appointment Date"
                                     id="date"
                                     name="date"
                                     labelPlacement="outside"
                                     isRequired={true}
                                     errorMessage={actionData?.fieldErrors?.date}
-                                />
-                            </div>
-
-                            <div>
-                                <TimeInput
-                                    label="Appointment Time"
-                                    id="time"
-                                    name="time"
-                                    labelPlacement="outside"
-                                    isRequired={true}
-                                    errorMessage={actionData?.fieldErrors?.time}
+                                    defaultValue={parseDate(dateExisting)}
                                 />
                             </div>
                         </div>
@@ -234,6 +245,7 @@ const CreateAppointmentModal = ({
                                 placeholder="Describe the service needed"
                                 multiple={true}
                                 rows={3}
+                                defaultValue={loaderData.existingAppointment?.description ?? ""}
                             />
                         </div>
 
@@ -257,5 +269,6 @@ const CreateAppointmentModal = ({
                 </ModalBody>
             </ModalContent>
         </Modal>
-    );
+    )
+        ;
 };
