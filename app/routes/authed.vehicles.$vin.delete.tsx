@@ -28,7 +28,7 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
 
     console.log(`Getting vehicle with VIN ${vin}`);
 
-    try {
+
 
         if (!vin || typeof vin !== "string") {
             throw new Error("VIN must be a non-empty string.");
@@ -43,40 +43,14 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
             return vehicle[0];
         }
 
-        // Fallback to mock data if no vehicle found
-        return {
-            VIN: vin || "Unknown",
-            customer_id: 1,
-            make: "Toyota",
-            model: "Camry",
-            year: 2020,
-            firstname: "John",
-            lastname: "Doe"
-        } as VehicleWithOwner;
-    } catch (error) {
-        console.error("Error fetching vehicle:", error);
-
-        // Return mock data in case of error
-        return {
-            VIN: vin || "Unknown",
-            customer_id: 1,
-            make: "Toyota",
-            model: "Camry",
-            year: 2020,
-            firstname: "John",
-            lastname: "Doe"
-        } as VehicleWithOwner;
-    }
 }
 
 export const action = async ({ params }: LoaderFunctionArgs): Promise<ActionReturn> => {
-    // Type params correctly - this is the key fix
     const { vin } = params;
 
     console.log(`Deleting vehicle with VIN ${vin}`);
 
     try {
-        // Fix: Specify the correct parameter types for makeDBQuery
         await makeDBQuery<void>(
             "DELETE FROM vehicle WHERE VIN = ?",
             [vin]

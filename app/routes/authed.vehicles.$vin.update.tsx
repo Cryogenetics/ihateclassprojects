@@ -11,6 +11,38 @@ import {
 import { Form, useActionData, useNavigate } from "@remix-run/react";
 import { redirect } from "@remix-run/router";
 import { useState } from "react";
+import {makeDBQuery} from "~/database";
+import {Customer, Vehicle} from "~/database/schemas/types";
+
+export const loader = async ({ params }: { params: { vin: string } }) => {
+    const { vin } = params;
+
+    if (!vin) {
+        throw new Error("Vehicle VIN is required");
+    }
+
+    try {
+        // Fetch vehicle
+        const [vehicle] = await makeDBQuery<Vehicle>(
+            "SELECT * FROM vehicle WHERE VIN = ?",
+            [vin]
+        );
+
+        if (!vehicle) {
+            throw new Error("Vehicle not found");
+        }
+
+        // Fetch customers for dropdown
+        const customers = await makeDBQuery<Customer>(
+            "SELECT customer_id, firstname, lastname FROM customer ORDER BY lastname, firstname"
+        );
+
+        return { vehicle, customers };
+    } catch (error) {
+        console.log(error);
+        throw error;
+    }
+};
 
 export const action = async ({ request }: { request: Request }) => {
     const formData = await request.formData();
@@ -33,8 +65,9 @@ export const action = async ({ request }: { request: Request }) => {
     }
 
     // Validate year is a number and within reasonable range
+    const yearNum = parseInt(year as string);
+
     if (year) {
-        const yearNum = parseInt(year);
         if (isNaN(yearNum) || yearNum < 1900 || yearNum > new Date().getFullYear() + 1) {
             fieldErrors.year = "Please enter a valid year";
         }
@@ -45,11 +78,10 @@ export const action = async ({ request }: { request: Request }) => {
     }
 
     try {
-        // Uncomment when ready to use with database
-        // await makeDBQuery(
-        //     "INSERT INTO vehicle (VIN, customer_id, make, model, year) VALUES (?, ?, ?, ?, ?)",
-        //     [vin, customerId, make, model, parseInt(year)]
-        // );
+        await makeDBQuery(
+            "UPDATE vehicle SET customer_id = ?, make = ?, model = ?, year = ? WHERE VIN = ?",
+            [customerId, make, model, yearNum, vin]
+        );
 
         console.log("Vehicle added:", { vin, customerId, make, model, year });
         return redirect("/authed/vehicles");

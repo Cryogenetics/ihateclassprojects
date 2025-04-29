@@ -15,6 +15,29 @@ import { Textarea } from "@heroui/input";
 import { useState } from "react";
 import {makeDBQuery} from "~/database";
 
+export const loader = async () => {
+    try {
+        // Fetch vehicles for dropdown
+        const vehicles = await makeDBQuery<Vehicle>(
+            "SELECT v.VIN, v.make, v.model, v.year, CONCAT(c.firstname, ' ', c.lastname) as owner FROM vehicle v JOIN customer c ON v.customer_id = c.customer_id ORDER BY v.make, v.model"
+        );
+
+        // Fetch mechanics (employees with role = 'mechanic')
+        const mechanics = await makeDBQuery<Mechanic>(
+            "SELECT employee_id, firstname, lastname FROM mechanic ORDER BY lastname, firstname"
+        );
+
+        // Fetch shops
+        const shops = await makeDBQuery<Shop>(
+            "SELECT shop_id, shop_name, address FROM shop ORDER BY shop_name"
+        );
+
+        return {vehicles, mechanics, shops};
+    } catch (error) {
+        console.error("Error loading appointment data:", error);
+        throw new Response("Failed to load appointment data", {status: 500});
+    }
+};
 
 export const action = async ({ request }: { request: Request }) => {
     const formData = await request.formData();
