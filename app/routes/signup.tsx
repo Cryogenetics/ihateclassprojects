@@ -19,11 +19,9 @@ export const loader = async ({request}: LoaderFunctionArgs) => {
 
 export const action = async ({request}: ActionFunctionArgs) => {
     const formData = await request.formData();
-    const email = formData.get("email")?.toString();
     const username = formData.get("username")?.toString();
     const rawPassword = formData.get("password")?.toString();
 
-    if (!email) throw new Response("Email Required", {status: 400, statusText: "Email Required"});
     if (!username) throw new Response("Username Required", {status: 400, statusText: "Username Required"});
     if (!rawPassword) throw new Response("Password Required", {status: 400, statusText: "Password Required"});
 
@@ -69,7 +67,6 @@ export default function Signup() {
                     Registration
                 </h1>
                 <Form method="post" className="w-full flex flex-col">
-                    <SignUpInput label="Email" text="email"/>
                     <SignUpInput label="Username" text="username"/>
                     <SignUpInput label="Password" text="password"/>
                     <div className="flex justify-center">

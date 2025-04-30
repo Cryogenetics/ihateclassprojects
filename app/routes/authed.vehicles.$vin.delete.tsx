@@ -78,6 +78,9 @@ export default function DeleteVehicleModal() {
         navigate("/authed/vehicles");
     }
 
+    if (actionData?.success) {
+        navigate("/authed/vehicles");
+    }
     return (
         <DeleteVehicleModalContent
             isOpen={opened}

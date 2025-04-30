@@ -104,6 +104,15 @@ const VehicleCard = ({key, vehicle}: { key?: string, vehicle: customOutput }) =>
                 >
                     Schedule Service
                 </Button>
+                <Button
+                    as={Link}
+                    href={`vehicles/${vehicle.VIN}/delete`}
+                    color="danger"
+                    variant="ghost"
+                    size="sm"
+                >
+                    Delete
+                </Button>
             </CardFooter>
         </Card>
     );

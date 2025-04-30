@@ -5,7 +5,7 @@ import {
     ModalContent,
     ModalHeader,
 } from "@heroui/react";
-import {Form, useNavigate, useLoaderData} from "@remix-run/react";
+import {Form, useNavigate, useLoaderData, useActionData} from "@remix-run/react";
 import {useState} from "react";
 import {ActionFunctionArgs} from "@remix-run/node";
 import {Appointment} from "~/database/schemas/types";
@@ -28,12 +28,16 @@ export const action = async ({params}: ActionFunctionArgs) => {
 
 export default function CreateModal() {
     const loaderData = useLoaderData<typeof loader>();
+    const actionData = useActionData<typeof action>();
 
     const navigate = useNavigate();
     const [opened, setOpened] = useState(true);
 
     const onClose = () => {
         setOpened(false);
+        navigate("/authed/appointments");
+    }
+    if (actionData?.success) {
         navigate("/authed/appointments");
     }
 

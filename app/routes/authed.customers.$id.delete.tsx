@@ -129,7 +129,7 @@ const DeleteCustomerModal = ({
                             </div>
                         </div>
 
-                        <div className="bg-white p-4 border border-gray-200 rounded-lg">
+                        <div className="p-4 border border-gray-200 rounded-lg">
                             <h3 className="text-lg font-medium mb-2">Customer Information</h3>
                             <div className="space-y-2">
                                 <p><span className="font-medium">ID:</span> {customer.customer_id}</p>
