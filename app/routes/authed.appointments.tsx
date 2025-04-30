@@ -75,7 +75,7 @@ const AppointmentCard = ({key, appointment}: {key:string, appointment: Appointme
             <p><span className="font-medium">VIN:</span> {appointment.VIN}</p>
             <p><span className="font-medium">Mechanic ID:</span> {appointment.mechanic_id}</p>
             <p><span className="font-medium">Shop ID:</span> {appointment.shop_id}</p>
-            <p><span className="font-medium">Scheduled:</span> {appointment.scheduled_datetime.toTimeString()}</p>
+            <p><span className="font-medium">Scheduled:</span> {formatTimeString(appointment.scheduled_datetime)}</p>
         </div>
     </CardBody>
     <CardFooter className="flex justify-end gap-2">
@@ -99,3 +99,15 @@ const AppointmentCard = ({key, appointment}: {key:string, appointment: Appointme
         </Button>
     </CardFooter>
 </Card>}
+
+
+const formatTimeString = (timeString: Date) =>{
+    return timeString.toLocaleString("en-US", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+    });
+}

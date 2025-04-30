@@ -14,8 +14,8 @@ import {Textarea} from "@heroui/input";
 import {useState} from "react";
 import {makeDBQuery} from "~/database";
 import {Appointment, Mechanic, Shop, Vehicle} from "~/database/schemas/types";
-import {LoaderFunctionArgs} from "@remix-run/node";
-import {fromDate, getLocalTimeZone, now} from "@internationalized/date";
+import {ActionFunctionArgs, LoaderFunctionArgs} from "@remix-run/node";
+import {fromDate, getLocalTimeZone, now, parseZonedDateTime} from "@internationalized/date";
 
 export const loader = async ({params}: LoaderFunctionArgs) => {
     try {
@@ -50,12 +50,15 @@ export const loader = async ({params}: LoaderFunctionArgs) => {
     }
 };
 
-export const action = async ({request}: { request: Request }) => {
+export const action = async ({request, params}: ActionFunctionArgs) => {
     const formData = await request.formData();
     const vin = formData.get("vin")?.toString();
     const mechanicId = formData.get("mechanicId")?.toString();
     const shopId = formData.get("shopId")?.toString();
     const date = formData.get("date")?.toString();
+    const parsedDate = parseZonedDateTime(date as string)
+    console.log(date);
+
     // const description = formData.get("description")?.toString();
 
     const fieldErrors: Record<string, string> = {};
@@ -69,15 +72,14 @@ export const action = async ({request}: { request: Request }) => {
     }
 
     try {
-        const appointmentId = formData.get("appointmentId")?.toString();
+        const appointmentId = params.id;
         if (!appointmentId) {
             return {error: "Appointment ID is required for updates"};
         }
-        const scheduledDatetime = new Date(date as string);
-        console.log(scheduledDatetime);
         await makeDBQuery(
             "UPDATE appointment SET VIN = ?, mechanic_id = ?, shop_id = ?, scheduled_datetime = ?, status = ? WHERE appt_id = ?",
-            [vin, mechanicId, shopId, scheduledDatetime, "updated", appointmentId]
+            [vin, mechanicId, shopId, parsedDate.toDate()
+                , "updated", appointmentId]
         );
         return {success: true};
     } catch (error) {
