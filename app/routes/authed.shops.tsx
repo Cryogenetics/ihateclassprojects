@@ -1,19 +1,10 @@
 import {makeDBQuery} from "~/database";
 import {Shop} from "~/database/schemas/types";
-import {
-    Button,
-    Card,
-    CardBody,
-    CardFooter,
-    CardHeader,
-    Divider,
-    Link,
-} from "@heroui/react";
+import {Button, Card, CardBody, CardFooter, CardHeader, Divider, Link,} from "@heroui/react";
 import {Outlet, useLoaderData} from "@remix-run/react";
 
 export const loader = async () => {
-    const shops = await makeDBQuery<Shop>("SELECT * FROM shop");
-    return shops;
+    return await makeDBQuery<Shop>("SELECT * FROM shop");
 }
 
 export default function ShopsList() {
@@ -66,7 +57,7 @@ const ShopCard = ({shop}: { shop: Shop }) => {
             <CardHeader className="flex justify-between items-center">
                 <h2 className="text-xl font-bold">{shop.shop_name}</h2>
                 <span className="text-sm px-2 py-1 rounded-full bg-blue-100 text-blue-800">
-                    Shop #{shop.shop_id + 1}
+                    Shop #{shop.shop_id}
                 </span>
             </CardHeader>
             <Divider/>

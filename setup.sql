@@ -2,7 +2,7 @@ create database mechanic_db;
 use mechanic_db;
 CREATE TABLE customer
 (
-    customer_id INT PRIMARY KEY,
+    customer_id INT AUTO_INCREMENT PRIMARY KEY,
     phone       VARCHAR(20),
     firstname   VARCHAR(255),
     lastname    VARCHAR(255)
@@ -20,7 +20,7 @@ CREATE TABLE vehicle
 
 CREATE TABLE shop
 (
-    shop_id   INT PRIMARY KEY,
+    shop_id   INT AUTO_INCREMENT PRIMARY KEY,
     address   VARCHAR(255),
     phone     VARCHAR(20),
     shop_name VARCHAR(255)
@@ -28,7 +28,7 @@ CREATE TABLE shop
 
 CREATE TABLE mechanic
 (
-    employee_id INT PRIMARY KEY,
+    employee_id INT AUTO_INCREMENT PRIMARY KEY,
     shop_id     INT,
     firstname   VARCHAR(255),
     lastname    VARCHAR(255),
@@ -39,7 +39,7 @@ CREATE TABLE mechanic
 
 CREATE TABLE appointment
 (
-    appt_id            INT PRIMARY KEY,
+    appt_id            INT AUTO_INCREMENT PRIMARY KEY,
     VIN                VARCHAR(255),
     mechanic_id        INT,
     shop_id            INT,
@@ -53,7 +53,7 @@ CREATE TABLE appointment
 
 CREATE TABLE users
 (
-    username VARCHAR(255),
+    username VARCHAR(255) unique,
     password VARCHAR(255)
 
 );

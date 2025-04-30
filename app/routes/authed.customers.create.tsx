@@ -13,13 +13,11 @@ import type {Customer} from "~/database/schemas/types";
 
 export const action = async ({ request }: { request: Request }) => {
     const formData = await request.formData();
-    const customerId = formData.get("customerId")?.toString();
     const firstname = formData.get("firstname")?.toString();
     const lastname = formData.get("lastname")?.toString();
     const phone = formData.get("phone")?.toString();
 
     const fieldErrors: Record<string, string> = {};
-    if (!customerId) fieldErrors.customerId = "Customer ID is required";
     if (!firstname) fieldErrors.firstname = "First name is required";
     if (!lastname) fieldErrors.lastname = "Last name is required";
     if (!phone) fieldErrors.phone = "Phone number is required";
@@ -30,8 +28,8 @@ export const action = async ({ request }: { request: Request }) => {
 
     try {
         await makeDBQuery<Customer>(
-            "INSERT INTO customer (customer_id, firstname, lastname, phone) VALUES (?, ?, ?, ?)",
-            [parseInt(customerId as string), firstname, lastname, phone]
+            "INSERT INTO customer ( firstname, lastname, phone) VALUES ( ?, ?, ?)",
+            [ firstname, lastname, phone]
         );
 
         return { success: true };
@@ -102,18 +100,6 @@ const CreateCustomerModal = ({
                     )}
 
                     <Form method="post" className="space-y-6">
-                        <div>
-                            <Input
-                                label="Customer ID"
-                                id="customerId"
-                                name="customerId"
-                                type="number"
-                                placeholder="Enter customer ID"
-                                isRequired={true}
-                                labelPlacement="outside"
-                                errorMessage={actionData?.fieldErrors?.customerId}
-                            />
-                        </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>

@@ -152,6 +152,12 @@ const UpdateAppointmentModal = ({
                         </div>
                     )}
 
+                    {actionData?.success && (
+                        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+                            Appointment successfully updated!
+                        </div>
+                    )}
+
                     <Form method="post" className="space-y-6">
                         <div>
                             {loaderData.vehicles.length ?
@@ -236,7 +242,6 @@ const UpdateAppointmentModal = ({
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <DatePicker
-                                    hideTimeZone
                                     showMonthAndYearPickers
                                     granularity={"minute"}
                                     label="Appointment Date"

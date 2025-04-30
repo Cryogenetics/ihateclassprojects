@@ -9,7 +9,6 @@ import {
     SelectItem,
 } from "@heroui/react";
 import {Form, useActionData, useNavigate, useLoaderData} from "@remix-run/react";
-import {redirect} from "@remix-run/router";
 import {useState} from "react";
 import {makeDBQuery} from "~/database";
 import {Customer, Vehicle} from "~/database/schemas/types";
@@ -89,7 +88,7 @@ export const action = async ({request, params}: ActionFunctionArgs) => {
         );
 
         console.log("Vehicle added:", {vin, customerId, make, model, year});
-        return redirect("/authed/vehicles");
+        return {success: true};
     } catch (error) {
         console.error("Error adding vehicle:", error);
         return {error: "Failed to add vehicle"};
@@ -107,10 +106,6 @@ export default function UpdateVehicleModal() {
         navigate("/authed/vehicles");
     }
 
-    // Check if we have successful action data and close the modal
-    if (actionData?.success) {
-        onClose();
-    }
 
     return (
         <VehicleFormModal
