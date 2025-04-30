@@ -8,25 +8,20 @@ import {
     Select,
     SelectItem,
 } from "@heroui/react";
-import { Form, useActionData, useNavigate } from "@remix-run/react";
+import {Form, useActionData, useLoaderData, useNavigate} from "@remix-run/react";
 import { useState } from "react";
 import {makeDBQuery} from "~/database";
-import {Customer, Vehicle} from "~/database/schemas/types";
+import {Customer} from "~/database/schemas/types";
+import {AddButton} from "~/components/AddButton";
 
 export const loader = async () => {
-
-        // Fetch vehicles
-        const vehicle = await makeDBQuery<Vehicle>(
-            "SELECT * FROM vehicle",
-        );
-
 
         // Fetch customers for dropdown
         const customers = await makeDBQuery<Customer>(
             "SELECT customer_id, firstname, lastname FROM customer ORDER BY lastname, firstname"
         );
 
-        return { vehicle, customers };
+        return {customers };
 };
 
 
@@ -79,6 +74,7 @@ export const action = async ({ request }: { request: Request }) => {
 
 export default function VehicleModal() {
     const actionData = useActionData<typeof action>();
+    const loaderData = useLoaderData<typeof loader>();
     const navigate = useNavigate();
     const [opened, setOpened] = useState(true);
 
@@ -92,6 +88,7 @@ export default function VehicleModal() {
             isOpen={opened}
             onClose={onClose}
             actionData={actionData}
+            loaderData={loaderData}
             mode="create"
         />
     );
@@ -101,8 +98,8 @@ const VehicleFormModal = ({
                               isOpen,
                               onClose,
                               actionData,
-                              mode,
-                              existingData,
+                              loaderData,
+                              mode
                           }: {
     isOpen: boolean;
     onClose: () => void;
@@ -119,32 +116,16 @@ const VehicleFormModal = ({
         fieldErrors?: undefined
         success?: undefined
     } | undefined;
+    loaderData: {
+        customers: Customer[]
+    } | undefined;
     mode: "create" | "edit";
-    existingData?: {
-        VIN: string;
-        customer_id: number;
-        make: string;
-        model: string;
-        year: number;
-    };
 }) => {
     const isEdit = mode === "edit";
     const title = isEdit ? "Edit Vehicle Information" : "Register New Vehicle";
     const submitButtonText = isEdit ? "Update Vehicle" : "Add Vehicle";
 
-    // Sample customer data for the dropdown
-    const customers = [
-        { id: 1, name: "John Doe" },
-        { id: 2, name: "Jane Smith" },
-        { id: 3, name: "Michael Johnson" },
-        { id: 4, name: "Sarah Williams" },
-        { id: 5, name: "Robert Brown" },
-        { id: 6, name: "Emily Davis" },
-        { id: 7, name: "David Miller" },
-        { id: 8, name: "Jessica Wilson" },
-        { id: 9, name: "Thomas Taylor" },
-        { id: 10, name: "Jennifer Anderson" }
-    ];
+
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} size="2xl">
@@ -157,6 +138,12 @@ const VehicleFormModal = ({
                     {actionData?.error && (
                         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
                             {actionData.error}
+                        </div>
+                    )}
+
+                    {actionData?.success && (
+                        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+                            Vehicle successfully added!
                         </div>
                     )}
 
@@ -176,6 +163,7 @@ const VehicleFormModal = ({
                         </div>
 
                         <div>
+                            {loaderData?.customers?.length ?
                             <Select
                                 label="Vehicle Owner"
                                 id="customerId"
@@ -183,14 +171,21 @@ const VehicleFormModal = ({
                                 labelPlacement="outside"
                                 isRequired={true}
                                 errorMessage={actionData?.fieldErrors?.customerId}
-                                defaultSelectedKeys={existingData ? [existingData.customer_id.toString()] : undefined}
+                                renderValue={
+                                    (selected) => {
+                                        const selectedCustomer = loaderData.customers.find(customer => customer.customer_id === parseInt(selected[0].key as string));
+                                        return <div>
+                                            {selectedCustomer ? `${selectedCustomer.firstname} ${selectedCustomer.lastname}` : "not found somehow"}
+                                        </div>
+                                    }
+                                }
                             >
-                                {customers.map(customer => (
-                                    <SelectItem key={customer.id.toString()}>
-                                        {customer.name}
+                                {loaderData.customers.map(customer => (
+                                    <SelectItem key={customer.customer_id.toString()}>
+                                        {customer.firstname}{customer.lastname}
                                     </SelectItem>
                                 ))}
-                            </Select>
+                            </Select>: <Input disabled value={"No Customers Available, add one"} endContent={<AddButton href={"/authed/customers/create"}/>}/>}
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

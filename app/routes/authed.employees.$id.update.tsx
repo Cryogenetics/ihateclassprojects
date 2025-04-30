@@ -8,34 +8,40 @@ import {
     Select,
     SelectItem,
 } from "@heroui/react";
-import {Form, useActionData, useLoaderData, useNavigate, useParams} from "@remix-run/react";
+import {Form, useActionData, useLoaderData, useNavigate} from "@remix-run/react";
 import {makeDBQuery} from "~/database";
 import {useState} from "react";
-import {Mechanic} from "~/database/schemas/types";
+import {Mechanic, Shop} from "~/database/schemas/types";
+import {LoaderFunctionArgs} from "@remix-run/node";
 
-export const loader = async ({params}: { params: { id: string } }) => {
-    const {id} = params;
-    if (!id) {
-        throw new Error("Mechanic ID is required");
+export const loader = async ({params}: LoaderFunctionArgs) => {
+    try {
+        // Fetch shops
+        const shops = await makeDBQuery<Shop>(
+            "SELECT shop_id, shop_name, address FROM shop ORDER BY shop_name"
+        );
+
+        // Fetch existing mechanic data
+        const [existingMechanic] = await makeDBQuery<Mechanic>(
+            "SELECT * FROM mechanic WHERE employee_id = ?",
+            [params.id]
+        );
+
+        if (!existingMechanic) {
+            throw new Error("Mechanic not found");
+        }
+
+        return {
+            shops,
+            existingMechanic
+        };
+    } catch (error) {
+        console.log(error);
+        throw error;
     }
-
-    const [mechanic] = await makeDBQuery<Mechanic>(
-        "SELECT * FROM mechanic WHERE employee_id = ?",
-        [parseInt(id)]
-    );
-
-    if (!mechanic) {
-        throw new Error("Mechanic not found");
-    }
-
-    return { mechanic };
 };
 
 export const action = async ({ request, params }: { request: Request, params: { id: string } }) => {
-    const {id} = params;
-    if (!id) {
-        return { error: "Mechanic ID is required" };
-    }
 
     const formData = await request.formData();
     const shopId = formData.get("shopId")?.toString();
@@ -56,9 +62,14 @@ export const action = async ({ request, params }: { request: Request, params: { 
     }
 
     try {
+        const employeeId = params.id;
+        if (!employeeId) {
+            return { error: "Employee ID is required for updates" };
+        }
+
         await makeDBQuery(
             "UPDATE mechanic SET shop_id = ?, firstname = ?, lastname = ?, phone = ?, specialty = ? WHERE employee_id = ?",
-            [parseInt(shopId as string), firstname, lastname, phone, specialty, parseInt(id)]
+            [parseInt(shopId as string), firstname, lastname, phone, specialty, employeeId]
         );
 
         return { success: true };
@@ -69,8 +80,7 @@ export const action = async ({ request, params }: { request: Request, params: { 
 };
 
 export default function UpdateModal() {
-    const params = useParams();
-    const {mechanic} = useLoaderData<typeof loader>();
+    const loaderData = useLoaderData<typeof loader>();
     const actionData = useActionData<typeof action>();
     const navigate = useNavigate();
     const [opened, setOpened] = useState(true);
@@ -85,7 +95,7 @@ export default function UpdateModal() {
             isOpen={opened}
             onClose={onClose}
             actionData={actionData}
-            mechanic={mechanic}
+            loaderData={loaderData}
         />
     );
 }
@@ -94,11 +104,14 @@ const UpdateMechanicModal = ({
                                  isOpen,
                                  onClose,
                                  actionData,
-                                 mechanic,
+                                 loaderData,
                              }: {
     isOpen: boolean;
     onClose: () => void;
-    mechanic: Mechanic;
+    loaderData: {
+        shops: Shop[],
+        existingMechanic: Mechanic,
+    }
     actionData: {
         fieldErrors?: Record<string, string>
         success?: boolean
@@ -118,7 +131,7 @@ const UpdateMechanicModal = ({
         <Modal isOpen={isOpen} onClose={onClose} size="3xl">
             <ModalContent>
                 <ModalHeader className="text-2xl font-bold">
-                    Update Mechanic: {mechanic.firstname} {mechanic.lastname}
+                    Update Mechanic: {loaderData.existingMechanic.firstname} {loaderData.existingMechanic.lastname}
                 </ModalHeader>
 
                 <ModalBody>
@@ -141,7 +154,7 @@ const UpdateMechanicModal = ({
                                     label="Employee ID"
                                     id="employeeId"
                                     name="employeeId"
-                                    value={mechanic.employee_id.toString()}
+                                    value={loaderData.existingMechanic.employee_id.toString()}
                                     isDisabled={true}
                                     labelPlacement="outside"
                                 />
@@ -154,7 +167,7 @@ const UpdateMechanicModal = ({
                                     name="shopId"
                                     labelPlacement="outside"
                                     isRequired={true}
-                                    defaultSelectedKeys={[mechanic.shop_id.toString()]}
+                                    defaultSelectedKeys={[loaderData.existingMechanic.shop_id.toString()]}
                                     errorMessage={actionData?.fieldErrors?.shopId}
                                 >
                                     <SelectItem key="1">Downtown Shop (#1)</SelectItem>
@@ -171,7 +184,7 @@ const UpdateMechanicModal = ({
                                     id="firstname"
                                     name="firstname"
                                     placeholder="Enter first name"
-                                    defaultValue={mechanic.firstname}
+                                    defaultValue={loaderData.existingMechanic.firstname}
                                     isRequired={true}
                                     labelPlacement="outside"
                                     errorMessage={actionData?.fieldErrors?.firstname}
@@ -184,7 +197,7 @@ const UpdateMechanicModal = ({
                                     id="lastname"
                                     name="lastname"
                                     placeholder="Enter last name"
-                                    defaultValue={mechanic.lastname}
+                                    defaultValue={loaderData.existingMechanic.lastname}
                                     isRequired={true}
                                     labelPlacement="outside"
                                     errorMessage={actionData?.fieldErrors?.lastname}
@@ -198,7 +211,7 @@ const UpdateMechanicModal = ({
                                 id="phone"
                                 name="phone"
                                 placeholder="Format: 555-123-4567"
-                                defaultValue={mechanic.phone}
+                                defaultValue={loaderData.existingMechanic.phone}
                                 isRequired={true}
                                 labelPlacement="outside"
                                 errorMessage={actionData?.fieldErrors?.phone}
@@ -212,7 +225,7 @@ const UpdateMechanicModal = ({
                                 name="specialty"
                                 labelPlacement="outside"
                                 isRequired={true}
-                                defaultSelectedKeys={[mechanic.specialty]}
+                                defaultSelectedKeys={[loaderData.existingMechanic.specialty]}
                                 errorMessage={actionData?.fieldErrors?.specialty}
                             >
                                 {specialties.map((specialty) => (

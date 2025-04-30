@@ -6,34 +6,39 @@ import {
     ModalContent,
     ModalHeader,
 } from "@heroui/react";
-import {Form, useActionData, useLoaderData, useNavigate, useParams} from "@remix-run/react";
+import {Form, useActionData, useLoaderData, useNavigate} from "@remix-run/react";
 import {makeDBQuery} from "~/database";
 import {useState} from "react";
 import type {Customer} from "~/database/schemas/types";
+import {LoaderFunctionArgs} from "@remix-run/node";
 
-export const loader = async ({params}: { params: { id: string } }) => {
-    const {id} = params;
-    if (!id) {
-        throw new Error("Customer ID is required");
+export const loader = async ({params}: LoaderFunctionArgs) => {
+    try {
+        const id = params.id;
+        if (!id) {
+            throw new Error("Customer ID is required");
+        }
+
+        const customers = await makeDBQuery<Customer>(
+            "SELECT * FROM customer WHERE customer_id = ?",
+            [parseInt(id)]
+        );
+
+        if (!customers || customers.length === 0) {
+            throw new Error("Customer not found");
+        }
+
+        return {
+            customer: customers[0]
+        };
+    } catch (error) {
+        console.log(error);
+        throw error;
     }
-
-    const [customer] = await makeDBQuery<Customer>(
-        "SELECT * FROM customer WHERE customer_id = ?",
-        [parseInt(id)]
-    );
-
-    if (!customer) {
-        throw new Error("Customer not found");
-    }
-
-    return { customer };
 };
 
 export const action = async ({ request, params }: { request: Request, params: { id: string } }) => {
-    const {id} = params;
-    if (!id) {
-        return { error: "Customer ID is required" };
-    }
+
 
     const formData = await request.formData();
     const firstname = formData.get("firstname")?.toString();
@@ -50,9 +55,13 @@ export const action = async ({ request, params }: { request: Request, params: { 
     }
 
     try {
+        if (!params.id) {
+            return {error: "Customer ID is required for updates"};
+        }
+
         await makeDBQuery(
             "UPDATE customer SET firstname = ?, lastname = ?, phone = ? WHERE customer_id = ?",
-            [firstname, lastname, phone, parseInt(id)]
+            [firstname, lastname, phone, parseInt(params.id)]
         );
 
         return { success: true };
@@ -63,8 +72,7 @@ export const action = async ({ request, params }: { request: Request, params: { 
 };
 
 export default function UpdateModal() {
-    const params = useParams();
-    const {customer} = useLoaderData<typeof loader>();
+    const loaderData = useLoaderData<typeof loader>();
     const actionData = useActionData<typeof action>();
     const navigate = useNavigate();
     const [opened, setOpened] = useState(true);
@@ -79,7 +87,7 @@ export default function UpdateModal() {
             isOpen={opened}
             onClose={onClose}
             actionData={actionData}
-            customer={customer}
+            loaderData={loaderData}
         />
     );
 }
@@ -88,22 +96,32 @@ const UpdateCustomerModal = ({
                                  isOpen,
                                  onClose,
                                  actionData,
-                                 customer,
+                                 loaderData,
                              }: {
     isOpen: boolean;
     onClose: () => void;
-    customer: Customer;
+    loaderData: {
+        customer: Customer
+    }
     actionData: {
-        fieldErrors?: Record<string, string>
-        success?: boolean
-        error?: string
+        fieldErrors: Record<string, string>
+        success: undefined
+        error: undefined
+    } | {
+        success: boolean
+        fieldErrors: undefined
+        error: undefined
+    } | {
+        error: string
+        fieldErrors: undefined
+        success: undefined
     } | undefined;
 }) => {
     return (
         <Modal isOpen={isOpen} onClose={onClose} size="2xl">
             <ModalContent>
                 <ModalHeader className="text-2xl font-bold">
-                    Update Customer: {customer.firstname} {customer.lastname}
+                    Update Customer: {loaderData.customer.firstname} {loaderData.customer.lastname}
                 </ModalHeader>
 
                 <ModalBody>
@@ -125,7 +143,7 @@ const UpdateCustomerModal = ({
                                 label="Customer ID"
                                 id="customerId"
                                 name="customerId"
-                                value={customer.customer_id.toString()}
+                                value={loaderData.customer.customer_id.toString()}
                                 isDisabled={true}
                                 labelPlacement="outside"
                             />
@@ -138,7 +156,7 @@ const UpdateCustomerModal = ({
                                     id="firstname"
                                     name="firstname"
                                     placeholder="Enter first name"
-                                    defaultValue={customer.firstname}
+                                    defaultValue={loaderData.customer.firstname}
                                     isRequired={true}
                                     labelPlacement="outside"
                                     errorMessage={actionData?.fieldErrors?.firstname}
@@ -151,7 +169,7 @@ const UpdateCustomerModal = ({
                                     id="lastname"
                                     name="lastname"
                                     placeholder="Enter last name"
-                                    defaultValue={customer.lastname}
+                                    defaultValue={loaderData.customer.lastname}
                                     isRequired={true}
                                     labelPlacement="outside"
                                     errorMessage={actionData?.fieldErrors?.lastname}
@@ -165,7 +183,7 @@ const UpdateCustomerModal = ({
                                 id="phone"
                                 name="phone"
                                 placeholder="Format: 555-123-4567"
-                                defaultValue={customer.phone}
+                                defaultValue={loaderData.customer.phone}
                                 isRequired={true}
                                 labelPlacement="outside"
                                 errorMessage={actionData?.fieldErrors?.phone}

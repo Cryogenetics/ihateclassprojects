@@ -6,29 +6,30 @@ import {
     ModalHeader,
 } from "@heroui/react";
 import {Form, useActionData, useNavigate, useLoaderData} from "@remix-run/react";
-import { useState } from "react";
+import {useState} from "react";
 import {ActionFunctionArgs} from "@remix-run/node";
 import {Appointment} from "~/database/schemas/types";
+import {makeDBQuery} from "~/database";
+import {redirect} from "@remix-run/router";
 
 
-export const loader = async ({ params }: ActionFunctionArgs) => {
+export const loader = async ({params}: ActionFunctionArgs) => {
     console.log(`getting appointment ${params.id}`)
     return {} as Appointment;
 }
 
-export const action = async ({ params }: ActionFunctionArgs) => {
-   console.log(`would've deleted appointment ${params.id}`);
-    return true
+export const action = async ({params}: ActionFunctionArgs) => {
+    await makeDBQuery("DELETE FROM appointments WHERE appt_id = ?", [params.id])
+    return redirect("/authed/appointments");
 };
 
 export default function CreateModal() {
-    const actionData = useActionData<typeof action>();
     const loaderData = useLoaderData<typeof loader>();
 
     const navigate = useNavigate();
     const [opened, setOpened] = useState(true);
 
-    const onClose = ()=> {
+    const onClose = () => {
         setOpened(false);
         navigate("/authed/appointments");
     }
@@ -45,11 +46,12 @@ export default function CreateModal() {
 const DeleteAppointmentModal = ({
                                     isOpen,
                                     onClose,
-    appointment
+                                    appointment
                                 }: {
     isOpen: boolean;
     onClose: () => void,
-    appointment: Appointment}) => {
+    appointment: Appointment
+}) => {
     return (
         <Modal isOpen={isOpen} onClose={onClose} size="3xl">
             <ModalContent>

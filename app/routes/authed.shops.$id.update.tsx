@@ -6,34 +6,34 @@ import {
     ModalContent,
     ModalHeader,
 } from "@heroui/react";
-import {Form, useActionData, useLoaderData, useNavigate, useParams} from "@remix-run/react";
+import {Form, useActionData, useLoaderData, useNavigate} from "@remix-run/react";
 import {makeDBQuery} from "~/database";
 import {useState} from "react";
 import type {Shop} from "~/database/schemas/types";
+import {LoaderFunctionArgs} from "@remix-run/node";
 
-export const loader = async ({params}: { params: { id: string } }) => {
-    const {id} = params;
-    if (!id) {
-        throw new Error("Shop ID is required");
+export const loader = async ({params}: LoaderFunctionArgs) => {
+    try {
+        // Fetch existing shop data
+        const [existingShop] = await makeDBQuery<Shop>(
+            "SELECT * FROM shop WHERE shop_id = ?",
+            [params.id]
+        );
+
+        if (!existingShop) {
+            throw new Error("Shop not found");
+        }
+
+        return {
+            existingShop
+        };
+    } catch (error) {
+        console.log(error);
+        throw error;
     }
-
-    const [shop] = await makeDBQuery<Shop>(
-        "SELECT * FROM shop WHERE shop_id = ?",
-        [parseInt(id)]
-    );
-
-    if (!shop) {
-        throw new Error("Shop not found");
-    }
-
-    return { shop };
 };
 
 export const action = async ({ request, params }: { request: Request, params: { id: string } }) => {
-    const {id} = params;
-    if (!id) {
-        return { error: "Shop ID is required" };
-    }
 
     const formData = await request.formData();
     const shopName = formData.get("shopName")?.toString();
@@ -50,9 +50,14 @@ export const action = async ({ request, params }: { request: Request, params: { 
     }
 
     try {
+        const shopId = params.id;
+        if (!shopId) {
+            return { error: "Shop ID is required for updates" };
+        }
+
         await makeDBQuery(
             "UPDATE shop SET shop_name = ?, address = ?, phone = ? WHERE shop_id = ?",
-            [shopName, address, phone, parseInt(id)]
+            [shopName, address, phone, shopId]
         );
 
         return { success: true };
@@ -63,8 +68,7 @@ export const action = async ({ request, params }: { request: Request, params: { 
 };
 
 export default function UpdateModal() {
-    const params = useParams();
-    const {shop} = useLoaderData<typeof loader>();
+    const loaderData = useLoaderData<typeof loader>();
     const actionData = useActionData<typeof action>();
     const navigate = useNavigate();
     const [opened, setOpened] = useState(true);
@@ -79,7 +83,7 @@ export default function UpdateModal() {
             isOpen={opened}
             onClose={onClose}
             actionData={actionData}
-            shop={shop}
+            loaderData={loaderData}
         />
     );
 }
@@ -88,11 +92,13 @@ const UpdateShopModal = ({
                              isOpen,
                              onClose,
                              actionData,
-                             shop,
+                             loaderData,
                          }: {
     isOpen: boolean;
     onClose: () => void;
-    shop: Shop;
+    loaderData: {
+        existingShop: Shop
+    };
     actionData: {
         fieldErrors?: Record<string, string>
         success?: boolean
@@ -103,7 +109,7 @@ const UpdateShopModal = ({
         <Modal isOpen={isOpen} onClose={onClose} size="2xl">
             <ModalContent>
                 <ModalHeader className="text-2xl font-bold">
-                    Update Shop: {shop.shop_name}
+                    Update Shop: {loaderData.existingShop.shop_name}
                 </ModalHeader>
 
                 <ModalBody>
@@ -125,7 +131,7 @@ const UpdateShopModal = ({
                                 label="Shop ID"
                                 id="shopId"
                                 name="shopId"
-                                value={shop.shop_id.toString()}
+                                value={loaderData.existingShop.shop_id.toString()}
                                 isDisabled={true}
                                 labelPlacement="outside"
                             />
@@ -137,7 +143,7 @@ const UpdateShopModal = ({
                                 id="shopName"
                                 name="shopName"
                                 placeholder="Enter shop name"
-                                defaultValue={shop.shop_name}
+                                defaultValue={loaderData.existingShop.shop_name}
                                 isRequired={true}
                                 labelPlacement="outside"
                                 errorMessage={actionData?.fieldErrors?.shopName}
@@ -150,7 +156,7 @@ const UpdateShopModal = ({
                                 id="address"
                                 name="address"
                                 placeholder="Enter full address"
-                                defaultValue={shop.address}
+                                defaultValue={loaderData.existingShop.address}
                                 isRequired={true}
                                 labelPlacement="outside"
                                 errorMessage={actionData?.fieldErrors?.address}
@@ -163,7 +169,7 @@ const UpdateShopModal = ({
                                 id="phone"
                                 name="phone"
                                 placeholder="Format: 555-123-4567"
-                                defaultValue={shop.phone}
+                                defaultValue={loaderData.existingShop.phone}
                                 isRequired={true}
                                 labelPlacement="outside"
                                 errorMessage={actionData?.fieldErrors?.phone}

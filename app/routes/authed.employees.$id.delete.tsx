@@ -37,7 +37,7 @@ export const action = async ({params}: ActionFunctionArgs) => {
 
     try {
         // First check if this mechanic has any appointments
-        const appointments = await makeDBQuery(
+        const appointments = await makeDBQuery<{count: number}>(
             "SELECT COUNT(*) as count FROM appointment WHERE mechanic_id = ?",
             [parseInt(id)]
         );

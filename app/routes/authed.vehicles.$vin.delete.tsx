@@ -6,8 +6,8 @@ import {
     ModalHeader,
 } from "@heroui/react";
 import {Form, useActionData, useNavigate, useLoaderData} from "@remix-run/react";
-import { useState } from "react";
-import {ActionFunctionArgs, LoaderFunctionArgs} from "@remix-run/node";
+import {useState} from "react";
+import {LoaderFunctionArgs} from "@remix-run/node";
 import {Vehicle} from "~/database/schemas/types";
 import {makeDBQuery} from "~/database";
 
@@ -22,31 +22,30 @@ type ActionReturn =
     | { success: boolean; errorMessage?: undefined }
     | { success?: undefined; errorMessage: string };
 
-export const loader = async ({ params }: LoaderFunctionArgs) => {
+export const loader = async ({params}: LoaderFunctionArgs) => {
     // Type params correctly - this is the key fix
-    const { vin } = params;
+    const {vin} = params;
 
     console.log(`Getting vehicle with VIN ${vin}`);
 
 
+    if (!vin || typeof vin !== "string") {
+        throw new Error("VIN must be a non-empty string.");
+    }
 
-        if (!vin || typeof vin !== "string") {
-            throw new Error("VIN must be a non-empty string.");
-        }
+    const vehicle = await makeDBQuery<VehicleWithOwner>(
+        "SELECT v.*, c.firstname, c.lastname FROM vehicle v JOIN customer c ON v.customer_id = c.customer_id WHERE v.VIN = ?",
+        [vin]
+    );
 
-        const vehicle = await makeDBQuery<VehicleWithOwner>(
-            "SELECT v.*, c.firstname, c.lastname FROM vehicle v JOIN customer c ON v.customer_id = c.customer_id WHERE v.VIN = ?",
-            [vin]
-        );
-
-        if (vehicle && vehicle.length > 0) {
-            return vehicle[0];
-        }
+    if (vehicle && vehicle.length > 0) {
+        return vehicle[0];
+    }
 
 }
 
-export const action = async ({ params }: LoaderFunctionArgs): Promise<ActionReturn> => {
-    const { vin } = params;
+export const action = async ({params}: LoaderFunctionArgs): Promise<ActionReturn> => {
+    const {vin} = params;
 
     console.log(`Deleting vehicle with VIN ${vin}`);
 
@@ -55,10 +54,10 @@ export const action = async ({ params }: LoaderFunctionArgs): Promise<ActionRetu
             "DELETE FROM vehicle WHERE VIN = ?",
             [vin]
         );
-        return { success: true };
+        return {success: true};
     } catch (error) {
         console.error("Error deleting vehicle:", error);
-        return { errorMessage: "Failed to delete vehicle. It may have associated appointments or service records." };
+        return {errorMessage: "Failed to delete vehicle. It may have associated appointments or service records."};
     }
 }
 
@@ -120,13 +119,16 @@ const DeleteVehicleModalContent = ({
                         <div className="bg-yellow-50 dark:bg-yellow-900/30 p-4 rounded-lg mb-4">
                             <h3 className="text-lg font-medium text-yellow-800 dark:text-yellow-200 mb-2">Warning</h3>
                             <p className="text-yellow-700 dark:text-yellow-300">
-                                Deleting this vehicle will permanently remove it from the system. Any associated service records may also be affected.
+                                Deleting this vehicle will permanently remove it from the system. Any associated service
+                                records may also be affected.
                             </p>
                         </div>
 
                         <div className="space-y-2">
                             <p><span className="font-medium">VIN:</span> {vehicle.VIN}</p>
-                            <p><span className="font-medium">Vehicle:</span> {vehicle.year} {vehicle.make} {vehicle.model}</p>
+                            <p><span
+                                className="font-medium">Vehicle:</span> {vehicle.year} {vehicle.make} {vehicle.model}
+                            </p>
                             <p><span className="font-medium">Owner:</span> {vehicle.firstname} {vehicle.lastname}</p>
                         </div>
 
