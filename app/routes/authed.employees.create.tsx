@@ -8,14 +8,28 @@ import {
     Select,
     SelectItem,
 } from "@heroui/react";
-import {Form, useActionData, useNavigate} from "@remix-run/react";
+import {Form, useActionData, useNavigate, useLoaderData} from "@remix-run/react";
 import {useState} from "react";
 import {makeDBQuery} from "~/database";
-import type {Mechanic} from "~/database/schemas/types";
+import type {Mechanic, Shop} from "~/database/schemas/types";
+import {AddButton} from "~/components/AddButton";
 
-export const action = async ({ request }: { request: Request }) => {
+export const loader = async () => {
+    try {
+        // Fetch shops
+        const shops = await makeDBQuery<Shop>(
+            "SELECT shop_id, shop_name, address FROM shop ORDER BY shop_name"
+        );
+
+        return {shops};
+    } catch (error) {
+        console.error("Error loading shop data:", error);
+        throw new Response("Failed to load shop data", {status: 500});
+    }
+};
+
+export const action = async ({request}: { request: Request }) => {
     const formData = await request.formData();
-    const employeeId = formData.get("employeeId")?.toString();
     const shopId = formData.get("shopId")?.toString();
     const firstname = formData.get("firstname")?.toString();
     const lastname = formData.get("lastname")?.toString();
@@ -23,7 +37,6 @@ export const action = async ({ request }: { request: Request }) => {
     const specialty = formData.get("specialty")?.toString();
 
     const fieldErrors: Record<string, string> = {};
-    if (!employeeId) fieldErrors.employeeId = "Employee ID is required";
     if (!shopId) fieldErrors.shopId = "Shop is required";
     if (!firstname) fieldErrors.firstname = "First name is required";
     if (!lastname) fieldErrors.lastname = "Last name is required";
@@ -31,23 +44,24 @@ export const action = async ({ request }: { request: Request }) => {
     if (!specialty) fieldErrors.specialty = "Specialty is required";
 
     if (Object.keys(fieldErrors).length > 0) {
-        return { fieldErrors };
+        return {fieldErrors};
     }
 
     try {
         await makeDBQuery<Mechanic>(
-            "INSERT INTO mechanic (employee_id, shop_id, firstname, lastname, phone, specialty) VALUES (?, ?, ?, ?, ?, ?)",
-            [parseInt(employeeId), parseInt(shopId), firstname, lastname, phone, specialty]
+            "INSERT INTO mechanic (shop_id, firstname, lastname, phone, specialty) VALUES ( ?, ?, ?, ?, ?)",
+            [parseInt(shopId as string), firstname, lastname, phone, specialty]
         );
 
-        return { success: true };
+        return {success: true};
     } catch (error) {
         console.error("Error creating mechanic:", error);
-        return { error: "Failed to create mechanic" };
+        return {error: "Failed to create mechanic"};
     }
 };
 
 export default function CreateModal() {
+    const loaderData = useLoaderData<typeof loader>();
     const actionData = useActionData<typeof action>();
     const navigate = useNavigate();
     const [opened, setOpened] = useState(true);
@@ -62,6 +76,7 @@ export default function CreateModal() {
             isOpen={opened}
             onClose={onClose}
             actionData={actionData}
+            loaderData={loaderData}
         />
     );
 }
@@ -70,6 +85,7 @@ const CreateMechanicModal = ({
                                  isOpen,
                                  onClose,
                                  actionData,
+                                 loaderData,
                              }: {
     isOpen: boolean;
     onClose: () => void;
@@ -85,6 +101,9 @@ const CreateMechanicModal = ({
         error: string
         fieldErrors?: undefined
         success?: undefined
+    } | undefined;
+    loaderData: {
+        shops: Shop[]
     } | undefined;
 }) => {
     // Specialties that match with the homepage services
@@ -118,32 +137,24 @@ const CreateMechanicModal = ({
 
                     <Form method="post" className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <Input
-                                    label="Employee ID"
-                                    id="employeeId"
-                                    name="employeeId"
-                                    type="number"
-                                    placeholder="Enter employee ID"
-                                    isRequired={true}
-                                    labelPlacement="outside"
-                                    errorMessage={actionData?.fieldErrors?.employeeId}
-                                />
-                            </div>
 
                             <div>
-                                <Select
-                                    label="Shop Location"
-                                    id="shopId"
-                                    name="shopId"
-                                    labelPlacement="outside"
-                                    isRequired={true}
-                                    errorMessage={actionData?.fieldErrors?.shopId}
-                                >
-                                    <SelectItem key="1">Downtown Shop (#1)</SelectItem>
-                                    <SelectItem key="2">Westside Location (#2)</SelectItem>
-                                    <SelectItem key="3">Northside Garage (#3)</SelectItem>
-                                </Select>
+                                {loaderData?.shops?.length ?
+                                    <Select
+                                        label="Shop Location"
+                                        id="shopId"
+                                        name="shopId"
+                                        labelPlacement="outside"
+                                        isRequired={true}
+                                        errorMessage={actionData?.fieldErrors?.shopId}
+                                    >
+                                        {loaderData.shops.map((shop) => (
+                                            <SelectItem key={shop.shop_id}>
+                                                {shop.shop_name}
+                                            </SelectItem>
+                                        ))}
+                                    </Select> : <Input disabled value={"No Shops Available, create one"}
+                                                       endContent={<AddButton href={"/authed/shops/create"}/>}/>}
                             </div>
                         </div>
 

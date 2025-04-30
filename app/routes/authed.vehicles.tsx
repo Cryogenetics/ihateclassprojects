@@ -9,10 +9,15 @@ import {
     Divider,
     Link,
 } from "@heroui/react";
-import { Outlet, useLoaderData} from "@remix-run/react";
+import {Outlet, useLoaderData} from "@remix-run/react";
 
+type customOutput = Vehicle & {
+    firstname: string,
+    lastname: string
+}
 export const loader = async () => {
-    const vehicles = await makeDBQuery<Vehicle>("SELECT v.*, c.firstname, c.lastname FROM vehicle v JOIN customer c ON v.customer_id = c.customer_id");
+    const vehicles = await makeDBQuery<customOutput>
+    ("SELECT v.*, c.firstname, c.lastname FROM vehicle v JOIN customer c ON v.customer_id = c.customer_id");
     return vehicles;
 }
 
@@ -21,98 +26,7 @@ export default function VehiclesIndex() {
     // const vehicles = useLoaderData<typeof loader>();
 
     // Sample data for testing purposes
-    const vehicles = [
-        {
-            VIN: "1HGCM82633A123456",
-            customer_id: 1,
-            make: "Honda",
-            model: "Accord",
-            year: 2020,
-            firstname: "John",
-            lastname: "Doe"
-        },
-        {
-            VIN: "WBAAA1305H2568190",
-            customer_id: 2,
-            make: "BMW",
-            model: "3 Series",
-            year: 2019,
-            firstname: "Jane",
-            lastname: "Smith"
-        },
-        {
-            VIN: "JH4DA9360PS001252",
-            customer_id: 3,
-            make: "Acura",
-            model: "NSX",
-            year: 2018,
-            firstname: "Michael",
-            lastname: "Johnson"
-        },
-        {
-            VIN: "2T1KR32E13C123456",
-            customer_id: 4,
-            make: "Toyota",
-            model: "Corolla",
-            year: 2021,
-            firstname: "Sarah",
-            lastname: "Williams"
-        },
-        {
-            VIN: "1FTFW1EF3BFA12345",
-            customer_id: 5,
-            make: "Ford",
-            model: "F-150",
-            year: 2022,
-            firstname: "Robert",
-            lastname: "Brown"
-        },
-        {
-            VIN: "1G1YY22G565100001",
-            customer_id: 6,
-            make: "Chevrolet",
-            model: "Corvette",
-            year: 2020,
-            firstname: "Emily",
-            lastname: "Davis"
-        },
-        {
-            VIN: "JT2BG22K1X0123456",
-            customer_id: 7,
-            make: "Toyota",
-            model: "Camry",
-            year: 2019,
-            firstname: "David",
-            lastname: "Miller"
-        },
-        {
-            VIN: "1ZVBP8CF7E5234567",
-            customer_id: 8,
-            make: "Ford",
-            model: "Mustang",
-            year: 2021,
-            firstname: "Jessica",
-            lastname: "Wilson"
-        },
-        {
-            VIN: "WAUZZZ8E56A123456",
-            customer_id: 9,
-            make: "Audi",
-            model: "A4",
-            year: 2022,
-            firstname: "Thomas",
-            lastname: "Taylor"
-        },
-        {
-            VIN: "5YJSA1DN5DFP12345",
-            customer_id: 10,
-            make: "Tesla",
-            model: "Model S",
-            year: 2023,
-            firstname: "Jennifer",
-            lastname: "Anderson"
-        }
-    ];
+    const vehicles = useLoaderData<typeof loader>();
 
     return (
         <div className="container mx-auto p-6 max-w-5xl bg-background">
@@ -141,19 +55,20 @@ export default function VehiclesIndex() {
                         </Button>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto pr-2 max-h-[70vh]">
+                    <div
+                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto pr-2 max-h-[70vh]">
                         {vehicles.map((vehicle) => (
-                            <VehicleCard key={vehicle.VIN} vehicle={vehicle} />
+                            <VehicleCard key={vehicle.VIN} vehicle={vehicle}/>
                         ))}
                     </div>
                 )}
             </div>
-            <Outlet />
+            <Outlet/>
         </div>
     );
 }
 
-const VehicleCard = ({key, vehicle}: {key?: string, vehicle: Vehicle & {firstname: string, lastname: string}}) => {
+const VehicleCard = ({key, vehicle}: { key?: string, vehicle: customOutput }) => {
     return (
         <Card key={key} className="border border-gray-200 dark:border-gray-700">
             <CardHeader className="flex justify-between items-center">
@@ -171,15 +86,6 @@ const VehicleCard = ({key, vehicle}: {key?: string, vehicle: Vehicle & {firstnam
                 </div>
             </CardBody>
             <CardFooter className="flex justify-end gap-2">
-                <Button
-                    as={Link}
-                    href={`vehicles/${vehicle.VIN}/service-history`}
-                    color="secondary"
-                    variant="flat"
-                    size="sm"
-                >
-                    Service History
-                </Button>
                 <Button
                     as={Link}
                     href={`vehicles/${vehicle.VIN}/update`}

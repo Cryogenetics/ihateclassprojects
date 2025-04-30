@@ -8,14 +8,15 @@ import {
     Select,
     SelectItem,
 } from "@heroui/react";
-import { Form, useActionData, useNavigate } from "@remix-run/react";
-import { redirect } from "@remix-run/router";
-import { useState } from "react";
+import {Form, useActionData, useNavigate, useLoaderData} from "@remix-run/react";
+import {redirect} from "@remix-run/router";
+import {useState} from "react";
 import {makeDBQuery} from "~/database";
 import {Customer, Vehicle} from "~/database/schemas/types";
+import {ActionFunctionArgs} from "@remix-run/node";
 
-export const loader = async ({ params }: { params: { vin: string } }) => {
-    const { vin } = params;
+export const loader = async ({params}: { params: { vin: string } }) => {
+    const {vin} = params;
 
     if (!vin) {
         throw new Error("Vehicle VIN is required");
@@ -37,14 +38,14 @@ export const loader = async ({ params }: { params: { vin: string } }) => {
             "SELECT customer_id, firstname, lastname FROM customer ORDER BY lastname, firstname"
         );
 
-        return { vehicle, customers };
+        return {existingVehicle: vehicle, customers};
     } catch (error) {
         console.log(error);
         throw error;
     }
 };
 
-export const action = async ({ request }: { request: Request }) => {
+export const action = async ({request, params}: ActionFunctionArgs) => {
     const formData = await request.formData();
     const vin = formData.get("vin")?.toString();
     const customerId = formData.get("customerId")?.toString();
@@ -74,24 +75,29 @@ export const action = async ({ request }: { request: Request }) => {
     }
 
     if (Object.keys(fieldErrors).length > 0) {
-        return { fieldErrors };
+        return {fieldErrors};
     }
 
     try {
+        const vehicleVin = params.vin;
+        if (!vehicleVin) {
+            return {error: "Vehicle VIN is required for updates"};
+        }
         await makeDBQuery(
             "UPDATE vehicle SET customer_id = ?, make = ?, model = ?, year = ? WHERE VIN = ?",
-            [customerId, make, model, yearNum, vin]
+            [customerId, make, model, yearNum, vehicleVin]
         );
 
-        console.log("Vehicle added:", { vin, customerId, make, model, year });
+        console.log("Vehicle added:", {vin, customerId, make, model, year});
         return redirect("/authed/vehicles");
     } catch (error) {
         console.error("Error adding vehicle:", error);
-        return { error: "Failed to add vehicle" };
+        return {error: "Failed to add vehicle"};
     }
 };
 
-export default function CreateVehicleModal() {
+export default function UpdateVehicleModal() {
+    const loaderData = useLoaderData<typeof loader>();
     const actionData = useActionData<typeof action>();
     const navigate = useNavigate();
     const [opened, setOpened] = useState(true);
@@ -111,6 +117,7 @@ export default function CreateVehicleModal() {
             isOpen={opened}
             onClose={onClose}
             actionData={actionData}
+            loaderData = {loaderData}
         />
     );
 }
@@ -119,10 +126,14 @@ const VehicleFormModal = ({
                               isOpen,
                               onClose,
                               actionData,
-                              existingData
+                              loaderData
                           }: {
     isOpen: boolean;
     onClose: () => void;
+    loaderData: {
+        existingVehicle: Vehicle;
+        customers: Customer[];
+    }
     actionData: {
         fieldErrors: Record<string, string>
         success?: undefined
@@ -136,37 +147,13 @@ const VehicleFormModal = ({
         fieldErrors?: undefined
         success?: undefined
     } | undefined;
-    existingData?: {
-        VIN: string;
-        customer_id: number;
-        make: string;
-        model: string;
-        year: number;
-    };
+
 }) => {
-    const isEdit = !!existingData;
-    const title = isEdit ? "Edit Vehicle Information" : "Register New Vehicle";
-    const submitButtonText = isEdit ? "Update Vehicle" : "Add Vehicle";
-
-    // Sample customer data
-    const customers = [
-        { id: 1, name: "John Doe" },
-        { id: 2, name: "Jane Smith" },
-        { id: 3, name: "Michael Johnson" },
-        { id: 4, name: "Sarah Williams" },
-        { id: 5, name: "Robert Brown" },
-        { id: 6, name: "Emily Davis" },
-        { id: 7, name: "David Miller" },
-        { id: 8, name: "Jessica Wilson" },
-        { id: 9, name: "Thomas Taylor" },
-        { id: 10, name: "Jennifer Anderson" }
-    ];
-
     return (
         <Modal isOpen={isOpen} onClose={onClose} size="3xl">
             <ModalContent>
                 <ModalHeader className="text-2xl font-bold">
-                    {title}
+                    Update Vehicle Information
                 </ModalHeader>
 
                 <ModalBody>
@@ -178,7 +165,7 @@ const VehicleFormModal = ({
 
                     {actionData?.success && (
                         <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-                            Vehicle successfully {isEdit ? "updated" : "added"}!
+                            Vehicle successfully updated!
                         </div>
                     )}
 
@@ -192,10 +179,8 @@ const VehicleFormModal = ({
                                 isRequired={true}
                                 labelPlacement="outside"
                                 errorMessage={actionData?.fieldErrors?.vin}
-                                defaultValue={existingData?.VIN}
-                                isDisabled={isEdit} // VIN shouldn't be changed if editing
+                                defaultValue={loaderData.existingVehicle.VIN}
                             />
-                            {isEdit && <input type="hidden" name="vin" value={existingData?.VIN} />}
                         </div>
 
                         <div>
@@ -206,11 +191,19 @@ const VehicleFormModal = ({
                                 labelPlacement="outside"
                                 isRequired={true}
                                 errorMessage={actionData?.fieldErrors?.customerId}
-                                defaultSelectedKeys={existingData ? [existingData.customer_id.toString()] : undefined}
+                                defaultSelectedKeys={[loaderData.existingVehicle?.customer_id.toString()]}
+                                renderValue={
+                                    (selected) => {
+                                        const selectedCustomer = loaderData.customers.find(customer => customer.customer_id === parseInt(selected[0].key as string));
+                                        return <div>
+                                            {selectedCustomer ? `${selectedCustomer.firstname} ${selectedCustomer.lastname}` : "not found somehow"}
+                                        </div>
+                                    }
+                                }
                             >
-                                {customers.map(customer => (
-                                    <SelectItem key={customer.id.toString()}>
-                                        {customer.name}
+                                {loaderData.customers.map(customer => (
+                                    <SelectItem key={customer.customer_id.toString()}>
+                                        {customer.firstname} {customer.lastname}
                                     </SelectItem>
                                 ))}
                             </Select>
@@ -226,7 +219,7 @@ const VehicleFormModal = ({
                                     labelPlacement="outside"
                                     isRequired={true}
                                     errorMessage={actionData?.fieldErrors?.make}
-                                    defaultValue={existingData?.make}
+                                    defaultValue={loaderData.existingVehicle?.make}
                                 />
                             </div>
 
@@ -239,7 +232,7 @@ const VehicleFormModal = ({
                                     labelPlacement="outside"
                                     isRequired={true}
                                     errorMessage={actionData?.fieldErrors?.model}
-                                    defaultValue={existingData?.model}
+                                    defaultValue={loaderData.existingVehicle?.model}
                                 />
                             </div>
 
@@ -255,7 +248,7 @@ const VehicleFormModal = ({
                                     labelPlacement="outside"
                                     isRequired={true}
                                     errorMessage={actionData?.fieldErrors?.year}
-                                    defaultValue={existingData?.year?.toString()}
+                                    defaultValue={loaderData.existingVehicle?.year?.toString()}
                                 />
                             </div>
                         </div>
@@ -273,7 +266,7 @@ const VehicleFormModal = ({
                                 variant="solid"
                                 color="primary"
                             >
-                                {submitButtonText}
+                                Update Vehicle
                             </Button>
                         </div>
                     </Form>

@@ -9,7 +9,7 @@ import {
     Divider,
     Link,
 } from "@heroui/react";
-import {Outlet} from "@remix-run/react";
+import {Outlet, useLoaderData} from "@remix-run/react";
 
 export const loader = async () => {
     const shops = await makeDBQuery<Shop>("SELECT * FROM shop");
@@ -18,44 +18,7 @@ export const loader = async () => {
 
 export default function ShopsList() {
     // Sample data - would normally come from the loader
-    const shops = [
-        {
-            shop_id: 1,
-            shop_name: "Downtown Tuning Center",
-            address: "123 Main Street, Metropolis, NY 10001",
-            phone: "555-123-4567"
-        },
-        {
-            shop_id: 2,
-            shop_name: "Eastside Performance",
-            address: "456 Oak Avenue, Gotham, CA 90210",
-            phone: "555-234-5678"
-        },
-        {
-            shop_id: 3,
-            shop_name: "Westend Auto Works",
-            address: "789 Pine Road, Central City, IL 60601",
-            phone: "555-345-6789"
-        },
-        {
-            shop_id: 4,
-            shop_name: "North County Customs",
-            address: "101 Maple Drive, Starling, TX 75001",
-            phone: "555-456-7890"
-        },
-        {
-            shop_id: 5,
-            shop_name: "South Bay Tuners",
-            address: "202 Elm Street, Coast City, FL 33101",
-            phone: "555-567-8901"
-        },
-        {
-            shop_id: 6,
-            shop_name: "Central Motorsports",
-            address: "303 Cedar Blvd, Keystone, WA 98101",
-            phone: "555-678-9012"
-        }
-    ];
+    const shops = useLoaderData<typeof loader>();
 
     return (
         <div className="container mx-auto p-6 max-w-5xl bg-background">
@@ -84,25 +47,26 @@ export default function ShopsList() {
                         </Button>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto pr-2 max-h-[calc(100vh-180px)]">
+                    <div
+                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto pr-2 max-h-[calc(100vh-180px)]">
                         {shops.map((shop) => (
-                            <ShopCard shop={shop} key={shop.shop_id.toString()} />
+                            <ShopCard shop={shop} key={shop.shop_id.toString()}/>
                         ))}
                     </div>
                 )}
             </div>
-            <Outlet />
+            <Outlet/>
         </div>
     );
 }
 
-const ShopCard = ({ shop }: { shop: Shop }) => {
+const ShopCard = ({shop}: { shop: Shop }) => {
     return (
         <Card className="border border-gray-200 dark:border-gray-700">
             <CardHeader className="flex justify-between items-center">
                 <h2 className="text-xl font-bold">{shop.shop_name}</h2>
                 <span className="text-sm px-2 py-1 rounded-full bg-blue-100 text-blue-800">
-                    Shop #{shop.shop_id}
+                    Shop #{shop.shop_id + 1}
                 </span>
             </CardHeader>
             <Divider/>
@@ -118,15 +82,6 @@ const ShopCard = ({ shop }: { shop: Shop }) => {
                 </div>
             </CardBody>
             <CardFooter className="flex justify-between">
-                <Button
-                    as={Link}
-                    href={`shops/${shop.shop_id}/mechanics`}
-                    color="primary"
-                    variant="flat"
-                    size="sm"
-                >
-                    View Mechanics
-                </Button>
                 <div className="flex gap-2">
                     <Button
                         as={Link}

@@ -6,38 +6,35 @@ import {
     ModalContent,
     ModalHeader,
 } from "@heroui/react";
-import { Form, useActionData, useNavigate } from "@remix-run/react";
-import { useState } from "react";
-import { makeDBQuery } from "~/database";
-import type { Shop } from "~/database/schemas/types";
+import {Form, useActionData, useNavigate} from "@remix-run/react";
+import {useState} from "react";
+import {makeDBQuery} from "~/database";
+import type {Shop} from "~/database/schemas/types";
 
-export const action = async ({ request }: { request: Request }) => {
+export const action = async ({request}: { request: Request }) => {
     const formData = await request.formData();
-    const shopId = formData.get("shopId")?.toString();
     const shopName = formData.get("shopName")?.toString();
     const address = formData.get("address")?.toString();
     const phone = formData.get("phone")?.toString();
 
     const fieldErrors: Record<string, string> = {};
-    if (!shopId) fieldErrors.shopId = "Shop ID is required";
     if (!shopName) fieldErrors.shopName = "Shop name is required";
     if (!address) fieldErrors.address = "Address is required";
     if (!phone) fieldErrors.phone = "Phone number is required";
-
     if (Object.keys(fieldErrors).length > 0) {
-        return { fieldErrors };
+        return {fieldErrors};
     }
 
     try {
         await makeDBQuery<Shop>(
-            "INSERT INTO shop (shop_id, shop_name, address, phone) VALUES (?, ?, ?, ?)",
-            [parseInt(shopId as string), shopName, address, phone]
+            "INSERT INTO shop (shop_name, address, phone) VALUES (?, ?, ?)",
+            [shopName, address, phone]
         );
 
-        return { success: true };
+        return {success: true};
     } catch (error) {
         console.error("Error creating shop:", error);
-        return { error: "Failed to create shop" };
+        return {error: "Failed to create shop"};
     }
 };
 
@@ -94,18 +91,7 @@ const CreateShopModal = ({
                     )}
 
                     <Form method="post" className="space-y-6">
-                        <div>
-                            <Input
-                                label="Shop ID"
-                                id="shopId"
-                                name="shopId"
-                                type="number"
-                                placeholder="Enter shop ID"
-                                isRequired={true}
-                                labelPlacement="outside"
-                                errorMessage={actionData?.fieldErrors?.shopId}
-                            />
-                        </div>
+
 
                         <div>
                             <Input

@@ -31,7 +31,7 @@ export const action = async ({ request }: { request: Request }) => {
     try {
         await makeDBQuery<Customer>(
             "INSERT INTO customer (customer_id, firstname, lastname, phone) VALUES (?, ?, ?, ?)",
-            [parseInt(customerId), firstname, lastname, phone]
+            [parseInt(customerId as string), firstname, lastname, phone]
         );
 
         return { success: true };

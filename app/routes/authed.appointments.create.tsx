@@ -9,7 +9,7 @@ import {
     Select,
     SelectItem,
 } from "@heroui/react";
-import {Form, useActionData, useLoaderData, useNavigate} from "@remix-run/react";
+import {Form, useActionData, useLoaderData, useNavigate, useSearchParams} from "@remix-run/react";
 import {Textarea} from "@heroui/input";
 import {useState} from "react";
 import {makeDBQuery} from "~/database";
@@ -79,7 +79,8 @@ export const action = async ({request}: { request: Request }) => {
 export default function CreateModal() {
     const actionData = useActionData<typeof action>();
     const loaderData = useLoaderData<typeof loader>();
-
+    const [searchParams] = useSearchParams();
+    const prefillVIN = searchParams.get("vin");
 
     const navigate = useNavigate();
     const [opened, setOpened] = useState(true);
@@ -96,6 +97,7 @@ export default function CreateModal() {
             onClose={onClose}
             actionData={actionData}
             loaderData={loaderData}
+            prefillVIN={prefillVIN ?? ""}
         />
     );
 }
@@ -105,7 +107,9 @@ const CreateAppointmentModal = ({
                                     onClose,
                                     actionData,
                                     loaderData,
+                                    prefillVIN
                                 }: {
+    prefillVIN: string
     isOpen: boolean;
     onClose: () => void;
     actionData: {
@@ -151,6 +155,7 @@ const CreateAppointmentModal = ({
                                         labelPlacement="outside"
                                         isRequired={true}
                                         errorMessage={actionData?.fieldErrors?.vin}
+                                        defaultSelectedKeys={[prefillVIN]}
                                         renderValue={
                                             (selected) => {
                                                 const selectedVehicle = loaderData.vehicles.find(vehicle => vehicle.VIN === selected[0].key);
@@ -168,7 +173,8 @@ const CreateAppointmentModal = ({
                                             </SelectItem>
                                         ))
                                     }
-                                </Select> : <Input disabled value={"No Vehicles Available, add one"} endContent={<AddButton href={"/authed/vehicles/create"}/>}/>
+                                </Select> : <Input disabled value={"No Vehicles Available, add one"}
+                                                   endContent={<AddButton href={"/authed/vehicles/create"}/>}/>
                             }
                         </div>
 
@@ -193,11 +199,13 @@ const CreateAppointmentModal = ({
                                     }
                                 >
                                     {loaderData.mechanics.map((mechanic) => (
-                                        <SelectItem key={mechanic.employee_id} textValue={mechanic.employee_id.toString()}>
+                                        <SelectItem key={mechanic.employee_id}
+                                                    textValue={mechanic.employee_id.toString()}>
                                             {mechanic.firstname} {mechanic.lastname}
                                         </SelectItem>
                                     ))}
-                                </Select> : <Input disabled value={"No Mechanics Available, add one"} endContent={<AddButton href={"/authed/employees/create"}/>}/>}
+                                </Select> : <Input disabled value={"No Mechanics Available, add one"}
+                                                   endContent={<AddButton href={"/authed/employees/create"}/>}/>}
                             </div>
 
                             <div>
@@ -216,7 +224,8 @@ const CreateAppointmentModal = ({
                                             {shop.shop_name}
                                         </SelectItem>
                                     ))}
-                                </Select> : <Input disabled value={"No Shops Available, create one"} endContent={<AddButton href={"/authed/shops/create"}/>}/>}
+                                </Select> : <Input disabled value={"No Shops Available, create one"}
+                                                   endContent={<AddButton href={"/authed/shops/create"}/>}/>}
                             </div>
                         </div>
 
@@ -237,17 +246,6 @@ const CreateAppointmentModal = ({
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 gap-4">
-                            <Textarea
-                                label="Service Description"
-                                id="description"
-                                name="description"
-                                labelPlacement="outside"
-                                placeholder="Describe the service needed"
-                                multiple={true}
-                                rows={3}
-                            />
-                        </div>
 
                         <div className="flex justify-end gap-2">
                             <Button

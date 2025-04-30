@@ -8,8 +8,9 @@ import {
     Divider,
     Link,
 } from "@heroui/react";
-import { Outlet } from "@remix-run/react";
-import { Mechanic } from "~/database/schemas/types";
+import {Outlet, useLoaderData} from "@remix-run/react";
+import {Mechanic} from "~/database/schemas/types";
+
 export const loader = async () => {
     const mechanics = await makeDBQuery<Mechanic>("SELECT * FROM mechanic");
     return mechanics;
@@ -17,48 +18,7 @@ export const loader = async () => {
 
 export default function MechanicsList() {
     // Sample data - would normally come from the loader
-    const mechanics = [
-        {
-            employee_id: 1,
-            shop_id: 1,
-            firstname: "John",
-            lastname: "Smith",
-            phone: "555-123-4567",
-            specialty: "Engine Tuning"
-        },
-        {
-            employee_id: 2,
-            shop_id: 2,
-            firstname: "Maria",
-            lastname: "Rodriguez",
-            phone: "555-987-6543",
-            specialty: "Suspension Mods"
-        },
-        {
-            employee_id: 3,
-            shop_id: 1,
-            firstname: "David",
-            lastname: "Chen",
-            phone: "555-456-7890",
-            specialty: "ECU Remapping"
-        },
-        {
-            employee_id: 4,
-            shop_id: 3,
-            firstname: "Sarah",
-            lastname: "Johnson",
-            phone: "555-234-5678",
-            specialty: "Turbo Installation"
-        },
-        {
-            employee_id: 5,
-            shop_id: 2,
-            firstname: "Michael",
-            lastname: "Kim",
-            phone: "555-876-5432",
-            specialty: "Custom Exhaust"
-        }
-    ];
+    const mechanics = useLoaderData<typeof loader>()
 
     return (
         <div className="container mx-auto p-6 max-w-5xl bg-background">
@@ -87,19 +47,20 @@ export default function MechanicsList() {
                         </Button>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto pr-2 max-h-[calc(100vh-180px)]">
+                    <div
+                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto pr-2 max-h-[calc(100vh-180px)]">
                         {mechanics.map((mechanic) => (
-                            <MechanicCard mechanic={mechanic} key={mechanic.employee_id.toString()} />
+                            <MechanicCard mechanic={mechanic} key={mechanic.employee_id.toString()}/>
                         ))}
                     </div>
                 )}
             </div>
-            <Outlet />
+            <Outlet/>
         </div>
     );
 }
 
-const MechanicCard = ({ mechanic }: { mechanic: Mechanic }) => {
+const MechanicCard = ({mechanic}: { mechanic: Mechanic }) => {
     // Map specialties to emojis based on the homepage services
     const specialtyIcons: Record<string, string> = {
         "Engine Tuning": "🏎️",
