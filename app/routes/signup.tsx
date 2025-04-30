@@ -34,7 +34,7 @@ export const action = async ({request}: ActionFunctionArgs) => {
     // run db query to check if user exists
     const userExists = (await makeDBQuery<{ username: string, password: string }>(`SELECT *
                                                                                    FROM users
-                                                                                   WHERE username = "${username}"`)).length === 0;
+                                                                                   WHERE username = ?`, [username]) ).length === 0;
 
     if (!userExists) {
         throw new Response("User already exists", {status: 400, statusText: "User already exists"});

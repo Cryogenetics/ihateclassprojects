@@ -15,7 +15,7 @@ import {useState} from "react";
 import {makeDBQuery} from "~/database";
 import {Mechanic, Shop, Vehicle} from "~/database/schemas/types";
 import {AddButton} from "~/components/AddButton";
-import {getLocalTimeZone, now} from "@internationalized/date";
+import {getLocalTimeZone, now, parseZonedDateTime} from "@internationalized/date";
 
 export const loader = async () => {
     try {
@@ -47,6 +47,8 @@ export const action = async ({request}: { request: Request }) => {
     const mechanicId = formData.get("mechanicId")?.toString();
     const shopId = formData.get("shopId")?.toString();
     const date = formData.get("date")?.toString();
+    const parsedDate = parseZonedDateTime(date as string)
+
 
     const fieldErrors: Record<string, string> = {};
     if (!vin) fieldErrors.vin = "VIN is required";
@@ -62,11 +64,9 @@ export const action = async ({request}: { request: Request }) => {
     console.log(date)
 
     try {
-        const scheduledDatetime = new Date(date as string);
-        console.log(scheduledDatetime);
         await makeDBQuery(
             "INSERT INTO appointment (VIN, mechanic_id, shop_id, scheduled_datetime, status) VALUES (?, ?, ?, ?, ?)",
-            [vin, mechanicId, shopId, scheduledDatetime || "", "scheduled"]
+            [vin, mechanicId, shopId, parsedDate.toDate(), "scheduled"]
         );
 
         return {success: true};
