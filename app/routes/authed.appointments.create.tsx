@@ -10,12 +10,11 @@ import {
     SelectItem,
 } from "@heroui/react";
 import {Form, useActionData, useLoaderData, useNavigate, useSearchParams} from "@remix-run/react";
-import {Textarea} from "@heroui/input";
 import {useState} from "react";
 import {makeDBQuery} from "~/database";
 import {Mechanic, Shop, Vehicle} from "~/database/schemas/types";
 import {AddButton} from "~/components/AddButton";
-import {getLocalTimeZone, now, parseZonedDateTime} from "@internationalized/date";
+import {getLocalTimeZone, now, parseDateTime} from "@internationalized/date";
 
 export const loader = async () => {
     try {
@@ -47,7 +46,8 @@ export const action = async ({request}: { request: Request }) => {
     const mechanicId = formData.get("mechanicId")?.toString();
     const shopId = formData.get("shopId")?.toString();
     const date = formData.get("date")?.toString();
-    const parsedDate = parseZonedDateTime(date as string)
+    console.log(date)
+
 
 
     const fieldErrors: Record<string, string> = {};
@@ -62,6 +62,7 @@ export const action = async ({request}: { request: Request }) => {
     }
 
     console.log(date)
+    const parsedDate = parseDateTime(date as string)
 
     try {
         await makeDBQuery(
@@ -142,6 +143,12 @@ const CreateAppointmentModal = ({
                     {actionData?.error && (
                         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
                             {actionData.error}
+                        </div>
+                    )}
+
+                    {actionData?.success && (
+                        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+                            Appointment successfully added!
                         </div>
                     )}
 
@@ -232,7 +239,6 @@ const CreateAppointmentModal = ({
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <DatePicker
-                                    hideTimeZone
                                     showMonthAndYearPickers
                                     granularity={"minute"}
                                     label="Appointment Date"

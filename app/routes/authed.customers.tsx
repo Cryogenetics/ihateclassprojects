@@ -1,19 +1,10 @@
 import {makeDBQuery} from "~/database";
 import {Customer} from "~/database/schemas/types";
-import {
-    Button,
-    Card,
-    CardBody,
-    CardFooter,
-    CardHeader,
-    Divider,
-    Link,
-} from "@heroui/react";
+import {Button, Card, CardBody, CardFooter, CardHeader, Divider, Link,} from "@heroui/react";
 import {Outlet, useLoaderData} from "@remix-run/react";
 
 export const loader = async () => {
-    const customers = await makeDBQuery<Customer>("SELECT * FROM customer");
-    return customers;
+    return await makeDBQuery<Customer>("SELECT * FROM customer");
 }
 
 export default function CustomersList() {
@@ -66,7 +57,7 @@ const CustomerCard = ({customer}: { customer: Customer }) => {
             <CardHeader className="flex justify-between items-center">
                 <h2 className="text-xl font-bold">{customer.firstname} {customer.lastname}</h2>
                 <span className="text-sm px-2 py-1 rounded-full bg-green-100 text-green-800">
-                    Customer #{customer.customer_id + 1}
+                    Customer #{customer.customer_id}
                 </span>
             </CardHeader>
             <Divider/>

@@ -5,7 +5,7 @@ import {
     ModalContent,
     ModalHeader,
 } from "@heroui/react";
-import {Form, useActionData, useNavigate, useLoaderData} from "@remix-run/react";
+import {Form, useNavigate, useLoaderData} from "@remix-run/react";
 import {useState} from "react";
 import {ActionFunctionArgs} from "@remix-run/node";
 import {Appointment} from "~/database/schemas/types";
@@ -15,11 +15,14 @@ import {redirect} from "@remix-run/router";
 
 export const loader = async ({params}: ActionFunctionArgs) => {
     console.log(`getting appointment ${params.id}`)
-    return {} as Appointment;
+
+    const [appointment] = await makeDBQuery<Appointment>("SELECT * FROM appointment WHERE appt_id = ?", [params.id]);
+
+    return appointment;
 }
 
 export const action = async ({params}: ActionFunctionArgs) => {
-    await makeDBQuery("DELETE FROM appointments WHERE appt_id = ?", [params.id])
+    await makeDBQuery("DELETE FROM appointment WHERE appt_id = ?", [params.id])
     return redirect("/authed/appointments");
 };
 
