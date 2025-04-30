@@ -13,23 +13,13 @@ import { useState } from "react";
 import {makeDBQuery} from "~/database";
 import {Customer, Vehicle} from "~/database/schemas/types";
 
-export const loader = async ({ params }: { params: { vin: string } }) => {
-    const { vin } = params;
+export const loader = async () => {
 
-    if (!vin) {
-        throw new Error("Vehicle VIN is required");
-    }
-
-    try {
-        // Fetch vehicle
-        const [vehicle] = await makeDBQuery<Vehicle>(
-            "SELECT * FROM vehicle WHERE VIN = ?",
-            [vin]
+        // Fetch vehicles
+        const vehicle = await makeDBQuery<Vehicle>(
+            "SELECT * FROM vehicle",
         );
 
-        if (!vehicle) {
-            throw new Error("Vehicle not found");
-        }
 
         // Fetch customers for dropdown
         const customers = await makeDBQuery<Customer>(
@@ -37,10 +27,6 @@ export const loader = async ({ params }: { params: { vin: string } }) => {
         );
 
         return { vehicle, customers };
-    } catch (error) {
-        console.log(error);
-        throw error;
-    }
 };
 
 
@@ -52,6 +38,7 @@ export const action = async ({ request }: { request: Request }) => {
     const model = formData.get("model")?.toString();
     const year = formData.get("year")?.toString();
 
+    console.log("submitted")
     const fieldErrors: Record<string, string> = {};
     if (!vin) fieldErrors.vin = "VIN is required";
     if (!customerId) fieldErrors.customerId = "Customer is required";
@@ -65,6 +52,7 @@ export const action = async ({ request }: { request: Request }) => {
     }
 
     // Validate year is a number and within reasonable range
+    console.log(fieldErrors);
     if (year) {
         const yearNum = parseInt(year);
         if (isNaN(yearNum) || yearNum < 1900 || yearNum > new Date().getFullYear() + 1) {
@@ -181,11 +169,10 @@ const VehicleFormModal = ({
                                 placeholder="Enter 17-character VIN"
                                 isRequired={true}
                                 labelPlacement="outside"
+                                maxLength={17}
+                                minLength={17}
                                 errorMessage={actionData?.fieldErrors?.vin}
-                                defaultValue={existingData?.VIN}
-                                isDisabled={isEdit} // VIN shouldn't be changed if editing
                             />
-                            {isEdit && <input type="hidden" name="vin" value={existingData?.VIN} />}
                         </div>
 
                         <div>
@@ -216,7 +203,6 @@ const VehicleFormModal = ({
                                     labelPlacement="outside"
                                     isRequired={true}
                                     errorMessage={actionData?.fieldErrors?.make}
-                                    defaultValue={existingData?.make}
                                 />
                             </div>
 
@@ -229,7 +215,6 @@ const VehicleFormModal = ({
                                     labelPlacement="outside"
                                     isRequired={true}
                                     errorMessage={actionData?.fieldErrors?.model}
-                                    defaultValue={existingData?.model}
                                 />
                             </div>
 
@@ -245,7 +230,6 @@ const VehicleFormModal = ({
                                     labelPlacement="outside"
                                     isRequired={true}
                                     errorMessage={actionData?.fieldErrors?.year}
-                                    defaultValue={existingData?.year?.toString()}
                                 />
                             </div>
                         </div>
