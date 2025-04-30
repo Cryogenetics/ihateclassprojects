@@ -11,7 +11,8 @@ export const db = mySQL.createPool({
     queueLimit: 0,
 });
 
-export async function makeDBQuery<T>(query: string, values: unknown[]=[]): Promise<T[]> {
+export async function makeDBQuery<T>(query: string, values: unknown[] = []): Promise<T[]> {
+
     return new Promise((resolve, reject) => {
         db.getConnection((err, connection) => {
             if (err) {
@@ -33,27 +34,25 @@ export async function makeDBQuery<T>(query: string, values: unknown[]=[]): Promi
 }
 
 
-
-
 /**
  * Parses MySQL query results into structured data using field metadata
  * @param results Array of MySQL RowDataPacket objects
  * @param fields Array of MySQL field metadata objects
  * @returns Properly structured data based on the query type
  */
-export function parseQueryResults<T>(results: Record<string,never>[], fields?: FieldInfo[]): T[] {
+export function parseQueryResults<T>(results: Record<string, never>[], fields?: FieldInfo[]): T[] {
     if (!results || !Array.isArray(results) || results.length === 0) {
         return [];
     }
     // For queries, return properly typed objects
     return results.map(row => {
-        const cleanRow: Record<string, boolean|Date|null> = {};
+        const cleanRow: Record<string, boolean | Date | null> = {};
 
         // If we have fields metadata, use it for better parsing
         if (fields && fields.length > 0) {
             fields.forEach(field => {
                 const key = field.name;
-                let value: boolean|Date|null = row[key];
+                let value: boolean | Date | null = row[key];
 
                 // Apply type conversions based on MySQL field types
                 switch (field.type) {
