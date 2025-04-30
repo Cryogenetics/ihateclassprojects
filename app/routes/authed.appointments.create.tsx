@@ -14,6 +14,8 @@ import {Textarea} from "@heroui/input";
 import {useState} from "react";
 import {makeDBQuery} from "~/database";
 import {Mechanic, Shop, Vehicle} from "~/database/schemas/types";
+import {AddButton} from "~/components/AddButton";
+import {getLocalTimeZone, now} from "@internationalized/date";
 
 export const loader = async () => {
     try {
@@ -45,21 +47,22 @@ export const action = async ({request}: { request: Request }) => {
     const mechanicId = formData.get("mechanicId")?.toString();
     const shopId = formData.get("shopId")?.toString();
     const date = formData.get("date")?.toString();
-    const time = formData.get("time")?.toString();
 
     const fieldErrors: Record<string, string> = {};
     if (!vin) fieldErrors.vin = "VIN is required";
     if (!mechanicId) fieldErrors.mechanicId = "Mechanic is required";
     if (!shopId) fieldErrors.shopId = "Shop is required";
     if (!date) fieldErrors.date = "Date is required";
-    if (!time) fieldErrors.time = "Time is required";
 
+    console.log(fieldErrors);
     if (Object.keys(fieldErrors).length > 0) {
         return {fieldErrors};
     }
 
+    console.log(date)
+
     try {
-        const scheduledDatetime = new Date(`${date}T${time}`);
+        const scheduledDatetime = new Date(date as string);
         console.log(scheduledDatetime);
         await makeDBQuery(
             "INSERT INTO appointment (VIN, mechanic_id, shop_id, scheduled_datetime, status) VALUES (?, ?, ?, ?, ?)",
@@ -69,7 +72,7 @@ export const action = async ({request}: { request: Request }) => {
         return {success: true};
     } catch (error) {
         console.error("Error creating appointment:", error);
-        return {error: "Failed to create appointment"};
+        throw error
     }
 };
 
@@ -148,15 +151,24 @@ const CreateAppointmentModal = ({
                                         labelPlacement="outside"
                                         isRequired={true}
                                         errorMessage={actionData?.fieldErrors?.vin}
+                                        renderValue={
+                                            (selected) => {
+                                                const selectedVehicle = loaderData.vehicles.find(vehicle => vehicle.VIN === selected[0].key);
+                                                return <div>
+                                                    {selectedVehicle ? `${selectedVehicle.VIN} - ${selectedVehicle.make} ${selectedVehicle.model} (${selectedVehicle.year})` : "not found somehow"}
+                                                </div>
+                                            }
+                                        }
                                 >
                                     {
-                                        loaderData.vehicles && loaderData.vehicles.map((vehicle) => (
-                                            <SelectItem key={vehicle.VIN}>
+                                        loaderData.vehicles.map((vehicle) => (
+                                            <SelectItem key={vehicle.VIN}
+                                                        textValue={vehicle.VIN}>
                                                 {vehicle.VIN} - {vehicle.make} {vehicle.model} ({vehicle.year})
                                             </SelectItem>
                                         ))
                                     }
-                                </Select> : <Input disabled value={"No Vehicles Available, add one"}/>
+                                </Select> : <Input disabled value={"No Vehicles Available, add one"} endContent={<AddButton href={"/authed/vehicles/create"}/>}/>
                             }
                         </div>
 
@@ -171,13 +183,21 @@ const CreateAppointmentModal = ({
                                     errorMessage={
                                         actionData?.fieldErrors?.mechanicId
                                     }
+                                    renderValue={
+                                        (selected) => {
+                                            const selectedMechanic = loaderData.mechanics.find(mechanic => mechanic.employee_id === parseInt(selected[0].key as string));
+                                            return <div>
+                                                {selectedMechanic ? `${selectedMechanic.firstname} ${selectedMechanic.lastname}` : "not found somehow"}
+                                            </div>
+                                        }
+                                    }
                                 >
-                                    {loaderData.mechanics && loaderData.mechanics.map((mechanic) => (
-                                        <SelectItem key={mechanic.employee_id}>
+                                    {loaderData.mechanics.map((mechanic) => (
+                                        <SelectItem key={mechanic.employee_id} textValue={mechanic.employee_id.toString()}>
                                             {mechanic.firstname} {mechanic.lastname}
                                         </SelectItem>
                                     ))}
-                                </Select> : <Input disabled value={"No Mechanics Available, add one"}/>}
+                                </Select> : <Input disabled value={"No Mechanics Available, add one"} endContent={<AddButton href={"/authed/employees/create"}/>}/>}
                             </div>
 
                             <div>
@@ -191,12 +211,12 @@ const CreateAppointmentModal = ({
                                         actionData?.fieldErrors?.shopId
                                     }
                                 >
-                                    {loaderData.shops && loaderData.shops.map((shop) => (
+                                    {loaderData.shops.map((shop) => (
                                         <SelectItem key={shop.shop_id}>
                                             {shop.shop_name}
                                         </SelectItem>
                                     ))}
-                                </Select> : <Input disabled value={"No Shops Available, create one"}/>}
+                                </Select> : <Input disabled value={"No Shops Available, create one"} endContent={<AddButton href={"/authed/shops/create"}/>}/>}
                             </div>
                         </div>
 
@@ -205,11 +225,13 @@ const CreateAppointmentModal = ({
                                 <DatePicker
                                     hideTimeZone
                                     showMonthAndYearPickers
+                                    granularity={"minute"}
                                     label="Appointment Date"
                                     id="date"
                                     name="date"
                                     labelPlacement="outside"
                                     isRequired={true}
+                                    minValue={now(getLocalTimeZone())}
                                     errorMessage={actionData?.fieldErrors?.date}
                                 />
                             </div>

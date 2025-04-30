@@ -2,16 +2,16 @@ Project:
  - [ ] Expected:
 	 - [ ] Implemented all parts of project
 	 - [ ] connects all tables of DB
-	 - [ ] professional looking
+	 - [x] professional looking
  - [ ] Very minimum project requirements:
 	 - [ ] Data model and implementation should be updated and in 3NF
 	 - [x] embedded SQL must be used directly
-	 - [ ] there should be a homepage
-	 - [ ] one or more pages that perform:
-		- [ ] INSERT
-		- [ ] UPDATE
-		- [ ] DELETE
-	 - [ ]  at least two security features
+	 - [x] there should be a homepage
+	 - [x] one or more pages that perform:
+		- [x] INSERT
+		- [x] UPDATE
+		- [x] DELETE
+	 - [x]  at least two security features
 	 - [ ] three report pages that cover some of the queries
  
 Report:

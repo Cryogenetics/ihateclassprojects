@@ -8,7 +8,6 @@ import {
     ModalHeader,
     Select,
     SelectItem,
-    TimeInput,
 } from "@heroui/react";
 import {Form, useActionData, useLoaderData, useNavigate} from "@remix-run/react";
 import {Textarea} from "@heroui/input";
@@ -16,28 +15,27 @@ import {useState} from "react";
 import {makeDBQuery} from "~/database";
 import {Appointment, Mechanic, Shop, Vehicle} from "~/database/schemas/types";
 import {LoaderFunctionArgs} from "@remix-run/node";
-import {toDate} from "@internationalized/date/src/conversion";
-import {now, parseDate, toTime} from "@internationalized/date";
+import {fromDate, getLocalTimeZone, now} from "@internationalized/date";
 
 export const loader = async ({params}: LoaderFunctionArgs) => {
     try {
         // Fetch vehicles
         const vehicles = await makeDBQuery<Vehicle>(
-            "SELECT v.VIN, v.make, v.model, v.year, v.customer_id FROM vehicle v ORDER BY v.make, v.model"
+            "SELECT v.VIN, v.make, v.model, v.year, CONCAT(c.firstname, ' ', c.lastname) as owner FROM vehicle v JOIN customer c ON v.customer_id = c.customer_id ORDER BY v.make, v.model"
         );
 
-        // Fetch mechanics
+        // Fetch mechanics (employees with role = 'mechanic')
         const mechanics = await makeDBQuery<Mechanic>(
-            "SELECT m.mechanic_id, m.firstname, m.lastname, m.specialization, m.shop_id FROM mechanic m ORDER BY m.lastname, m.firstname"
+            "SELECT employee_id, firstname, lastname FROM mechanic ORDER BY lastname, firstname"
         );
 
         // Fetch shops
         const shops = await makeDBQuery<Shop>(
-            "SELECT s.shop_id, s.name, s.address, s.phone FROM shop s ORDER BY s.name"
+            "SELECT shop_id, shop_name, address FROM shop ORDER BY shop_name"
         );
 
         const [existingAppointment] = await makeDBQuery<Appointment>(
-            "SELECT * FROM appointment a WHERE a.appointment_id = ?",
+            "SELECT * FROM appointment a WHERE a.appt_id = ?",
             [params.id]
         );
         return {
@@ -58,7 +56,6 @@ export const action = async ({request}: { request: Request }) => {
     const mechanicId = formData.get("mechanicId")?.toString();
     const shopId = formData.get("shopId")?.toString();
     const date = formData.get("date")?.toString();
-    const time = formData.get("time")?.toString();
     // const description = formData.get("description")?.toString();
 
     const fieldErrors: Record<string, string> = {};
@@ -66,7 +63,6 @@ export const action = async ({request}: { request: Request }) => {
     if (!mechanicId) fieldErrors.mechanicId = "Mechanic is required";
     if (!shopId) fieldErrors.shopId = "Shop is required";
     if (!date) fieldErrors.date = "Date is required";
-    if (!time) fieldErrors.time = "Time is required";
 
     if (Object.keys(fieldErrors).length > 0) {
         return {fieldErrors};
@@ -77,11 +73,11 @@ export const action = async ({request}: { request: Request }) => {
         if (!appointmentId) {
             return {error: "Appointment ID is required for updates"};
         }
-        const scheduledDatetime = new Date(`${date}T${time}`);
+        const scheduledDatetime = new Date(date as string);
         console.log(scheduledDatetime);
         await makeDBQuery(
-            "UPDATE appointment SET VIN = ?, mechanic_id = ?, shop_id = ?, scheduled_datetime = ?, description = ?, status = ? WHERE appointment_id = ?",
-            [vin, mechanicId, shopId, scheduledDatetime, description || "", "updated", appointmentId]
+            "UPDATE appointment SET VIN = ?, mechanic_id = ?, shop_id = ?, scheduled_datetime = ?, status = ? WHERE appt_id = ?",
+            [vin, mechanicId, shopId, scheduledDatetime, "updated", appointmentId]
         );
         return {success: true};
     } catch (error) {
@@ -102,7 +98,7 @@ export default function CreateModal() {
     }
 
     return (
-        <CreateAppointmentModal
+        <UpdateAppointmentModal
             isOpen={opened}
             onClose={onClose}
             actionData={actionData}
@@ -111,7 +107,7 @@ export default function CreateModal() {
     );
 }
 
-const CreateAppointmentModal = ({
+const UpdateAppointmentModal = ({
                                     isOpen,
                                     onClose,
                                     actionData,
@@ -128,24 +124,23 @@ const CreateAppointmentModal = ({
     }
     actionData: {
         fieldErrors: Record<string, string>
-        success?: undefined
-        error?: undefined
+        success: undefined
+        error: undefined
     } | {
         success: boolean
-        fieldErrors?: undefined
-        error?: undefined
+        fieldErrors: undefined
+        error: undefined
     } | {
         error: string
-        fieldErrors?: undefined
-        success?: undefined
+        fieldErrors: undefined
+        success: undefined
     } | undefined;
 }) => {
-    const dateExisting = loaderData.existingAppointment.scheduled_datetime;
     return (
         <Modal isOpen={isOpen} onClose={onClose} size="3xl">
             <ModalContent>
                 <ModalHeader className="text-2xl font-bold">
-                    Create New Appointment
+                    Update Appointment
                 </ModalHeader>
 
                 <ModalBody>
@@ -165,10 +160,18 @@ const CreateAppointmentModal = ({
                                         labelPlacement="outside"
                                         isRequired={true}
                                         errorMessage={actionData?.fieldErrors?.vin}
-                                        selectedKeys={[loaderData.existingAppointment.VIN]}
+                                        defaultSelectedKeys={[loaderData.existingAppointment.VIN]}
+                                        renderValue={
+                                            (selected) => {
+                                                const selectedVehicle = loaderData.vehicles.find(vehicle => vehicle.VIN === selected[0].key);
+                                                return <div>
+                                                    {selectedVehicle ? `${selectedVehicle.VIN} - ${selectedVehicle.make} ${selectedVehicle.model} (${selectedVehicle.year})` : "not found somehow"}
+                                                </div>
+                                            }
+                                        }
                                 >
                                     {
-                                        loaderData.vehicles && loaderData.vehicles.map((vehicle) => (
+                                        loaderData.vehicles.map((vehicle) => (
                                             <SelectItem key={vehicle.VIN}>
                                                 {vehicle.VIN} - {vehicle.make} {vehicle.model} ({vehicle.year})
                                             </SelectItem>
@@ -189,9 +192,17 @@ const CreateAppointmentModal = ({
                                     errorMessage={
                                         actionData?.fieldErrors?.mechanicId
                                     }
-                                    selectedKeys={[loaderData.existingAppointment.mechanic_id]}
+                                    defaultSelectedKeys={[loaderData.existingAppointment.mechanic_id.toString()]}
+                                    renderValue={
+                                        (selected) => {
+                                            const selectedMechanic = loaderData.mechanics.find(mechanic => mechanic.employee_id === parseInt(selected[0].key as string));
+                                            return <div>
+                                                {selectedMechanic ? `${selectedMechanic.firstname} ${selectedMechanic.lastname}` : "not found somehow"}
+                                            </div>
+                                        }
+                                    }
                                 >
-                                    {loaderData.mechanics && loaderData.mechanics.map((mechanic) => (
+                                    {loaderData.mechanics.map((mechanic) => (
                                         <SelectItem key={mechanic.employee_id}>
                                             {mechanic.firstname} {mechanic.lastname}
                                         </SelectItem>
@@ -209,9 +220,9 @@ const CreateAppointmentModal = ({
                                     errorMessage={
                                         actionData?.fieldErrors?.shopId
                                     }
-                                    selectedKeys={[loaderData.existingAppointment.shop_id]}
+                                    defaultSelectedKeys={[loaderData.existingAppointment.shop_id.toString()]}
                                 >
-                                    {loaderData.shops && loaderData.shops.map((shop) => (
+                                    {loaderData.shops.map((shop) => (
                                         <SelectItem key={shop.shop_id}>
                                             {shop.shop_name}
                                         </SelectItem>
@@ -225,13 +236,15 @@ const CreateAppointmentModal = ({
                                 <DatePicker
                                     hideTimeZone
                                     showMonthAndYearPickers
+                                    granularity={"minute"}
                                     label="Appointment Date"
                                     id="date"
                                     name="date"
                                     labelPlacement="outside"
                                     isRequired={true}
+                                    minValue={now(getLocalTimeZone())}
+                                    defaultValue={fromDate(loaderData.existingAppointment.scheduled_datetime, getLocalTimeZone())}
                                     errorMessage={actionData?.fieldErrors?.date}
-                                    defaultValue={parseDate(dateExisting)}
                                 />
                             </div>
                         </div>
@@ -245,7 +258,7 @@ const CreateAppointmentModal = ({
                                 placeholder="Describe the service needed"
                                 multiple={true}
                                 rows={3}
-                                defaultValue={loaderData.existingAppointment?.description ?? ""}
+                                defaultValue={""}
                             />
                         </div>
 
@@ -262,7 +275,7 @@ const CreateAppointmentModal = ({
                                 variant="solid"
                                 color="primary"
                             >
-                                Create Appointment
+                                Update Appointment
                             </Button>
                         </div>
                     </Form>
