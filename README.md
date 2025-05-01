@@ -7,21 +7,22 @@ This is a database group project for the course CMPS 460 at ULL. im not writing 
    git clone https://github.com/Cryogenetics/ihateclassprojects.git
    cd ihateclassprojects
    ```
-   2. if you don't have node.js installed, install it from [here](https://nodejs.org/en/download/).
-   3. Install the project dependencies:
+2. if you don't have node.js installed, install it from [here](https://nodejs.org/en/download/).
+3. Install the project dependencies:
    ```bash
    npm install
    ```
-   4. create a `.env` file in the root directory of the project, a template is provided (`.env.template`) in root, and change/fill whatever values you need. 
-   5. Run the database initialization script:
+4. create a `.env` file in the root directory of the project, a template is provided (`.env.template`) in root, and change/fill whatever values you need. 
+5. make sure your MariaDB/MySQL server is actually running and connectable with provided login, or nothing’s gonna work (obviously)
+6. Run the database initialization script:
    ```bash
    npm run setup
    ```
-   6. Run the server:
+7. Run the server:
    ```bash
    npm run dev
    ```
-   7. Open your browser and go to `http://localhost:5173` to see the application in action.
+8. Open your browser and go to `http://localhost:5173` to see the application in action.
 
 now, for my professor and TA that may want to quickly look at certain things, or need a rundown on where to look at things
 ### Loading database information for the page
